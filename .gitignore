@@ -1,0 +1,40 @@
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+
+# Drizzle generated migrations (keep drizzle/ folder but ignore snapshots if desired)
+# Uncomment if you don't want to commit migration snapshots:
+# drizzle/meta/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test / coverage
+coverage/
+.vitest-cache/
+
+# Misc
+*.tsbuildinfo
