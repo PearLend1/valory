@@ -1,0 +1,69 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1768160861700,
+      "tag": "0000_perpetual_greymalkin",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1768160999682,
+      "tag": "0001_chunky_giant_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1768165783790,
+      "tag": "0002_parallel_ogun",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1772753458248,
+      "tag": "0003_smart_nighthawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1772839652823,
+      "tag": "0004_yellow_james_howlett",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1772842780305,
+      "tag": "0005_tricky_lady_bullseye",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1773002144976,
+      "tag": "0006_fine_goblin_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1774478266184,
+      "tag": "0007_magenta_epoch",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1775505548622,
+      "tag": "0008_nosy_scarlet_witch",
+      "breakpoints": true
+    }
+  ]
+}

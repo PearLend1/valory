@@ -1,0 +1,55 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@shared/*": ["./shared/*"]
+    }
+  },
+  "include": [
+    "src",
+    "shared",
+    "_core",
+    "routers",
+    "services",
+    "routers.ts",
+    "schema.ts",
+    "db.ts",
+    "const.ts",
+    "coverage-config.ts",
+    "external-data-provider.ts",
+    "valuation-engine.ts",
+    "fair-agent-ranking.ts",
+    "fair-agent-matching.ts",
+    "feed-ranking-engine.ts",
+    "localized-trending-engine.ts",
+    "popularity-signals.ts",
+    "momentum-badge.ts",
+    "demo-mode.ts",
+    "mock-data.ts",
+    "rbac.ts",
+    "storage.ts",
+    "errors.ts",
+    "relations.ts",
+    "App.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "*.test.ts"
+  ]
+}

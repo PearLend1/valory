@@ -22,9 +22,17 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# OS
+# OS & editor system files
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Claude Code internal files
+.claude/
+
+# Archives & large binaries
+*.zip
+*.pdf
 
 # Editor
 .vscode/
