@@ -1,11 +1,12 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default {
-  plugins: [react()],
+  plugins: [tailwindcss(), react()],
   // Root is the project root so index.html is found at the top level
   root: __dirname,
   resolve: {
@@ -17,8 +18,5 @@ export default {
   build: {
     outDir: path.resolve(__dirname, "dist/public"),
     emptyOutDir: true,
-  },
-  css: {
-    postcss: {},
   },
 };
