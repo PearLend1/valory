@@ -88,7 +88,7 @@ export default function SellerValuationResult() {
       typeBucket,
       beds:            beds ? parseInt(beds) : undefined,
       areaSqm:         sqft ? parseFloat(sqft) * 0.0929 : undefined,
-      postcode:        postcode || undefined,
+      postcode:        postcode.length >= 5 ? postcode : undefined,
       postcodeOutcode: postcodeOutcode || undefined,
       area:            postcodeOutcode || undefined,
     },

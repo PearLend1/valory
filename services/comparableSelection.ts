@@ -166,6 +166,76 @@ export function scoreComp(subject: Subject, comp: Comp, radiusM: number): number
 }
 
 /**
+ * Deterministic demo comps used when there is no database connection (demo mode).
+ * Prices are anchored to realistic UK regional medians and seeded by postcode/type/beds
+ * so the same inputs always produce the same valuation.
+ */
+function buildDemoComps(subject: Subject): Comp[] {
+  // Regional base price by outcode prefix
+  const outcode = (subject.postcodeOutcode ?? 'TA').toUpperCase();
+  const regionBases: Record<string, number> = {
+    SW: 450_000, SE: 520_000, E: 480_000, N: 400_000, W: 440_000, NW: 370_000,
+    EC: 700_000, WC: 680_000, BS: 320_000, BA: 310_000, TA: 250_000, EX: 270_000,
+    TQ: 260_000, PL: 220_000, TR: 290_000, GL: 300_000, HR: 240_000, SY: 230_000,
+    WR: 280_000, CV: 260_000, B:  270_000, LE: 270_000, NG: 250_000, DE: 240_000,
+    ST: 220_000, SK: 300_000, M:  290_000, WN: 200_000, BL: 210_000, OL: 200_000,
+    HX: 210_000, HD: 220_000, WF: 210_000, LS: 260_000, BD: 220_000, HG: 310_000,
+    YO: 280_000, HU: 190_000, DN: 190_000, S:  220_000, LN: 200_000, PE: 230_000,
+    CB: 380_000, IP: 280_000, NR: 260_000, CO: 290_000, CM: 350_000, SS: 330_000,
+    ME: 310_000, CT: 280_000, TN: 370_000, BN: 380_000, PO: 300_000, SO: 310_000,
+    RG: 420_000, GU: 450_000, KT: 520_000, CR: 420_000, SM: 430_000, BR: 400_000,
+    DA: 370_000, RM: 360_000, IG: 360_000, EN: 440_000, WD: 500_000, AL: 480_000,
+    SG: 400_000, HP: 460_000, MK: 330_000, NN: 270_000, OX: 430_000, SN: 280_000,
+    SP: 290_000, DT: 310_000, BH: 330_000, CF: 220_000, SA: 180_000,
+    NP: 210_000, LD: 190_000, SL: 450_000, RH: 400_000, UB: 430_000, HA: 460_000,
+    TW: 490_000,
+  };
+
+  // Find matching prefix (longest match first)
+  let base = 270_000;
+  for (let len = Math.min(outcode.length, 4); len >= 1; len--) {
+    const prefix = outcode.slice(0, len);
+    if (regionBases[prefix] !== undefined) { base = regionBases[prefix]; break; }
+  }
+
+  // Adjust for property type
+  const typeMultiplier = subject.typeBucket === 'flat' ? 0.72 : 1.0;
+
+  // Adjust for beds
+  const bedsMultiplier = subject.beds == null ? 1.0 : [0, 0.55, 0.75, 1.0, 1.28, 1.55, 1.80][Math.min(subject.beds, 6)];
+
+  const anchorPrice = Math.round(base * typeMultiplier * bedsMultiplier);
+
+  const ppdType = subject.typeBucket === 'flat' ? 'F'
+    : subject.typeBucket === 'house' ? 'S'
+    : 'T';
+
+  const now = Date.now();
+  const oneYear = 365 * 24 * 60 * 60 * 1000;
+
+  // Generate 18 synthetic comps with ±15% price scatter
+  const comps: Comp[] = Array.from({ length: 18 }, (_, i) => {
+    // Deterministic pseudo-random using index
+    const seed = (i * 7 + 13) % 17;
+    const priceFactor = 1 + (seed / 17 - 0.5) * 0.30; // ±15%
+    const daysAgo = Math.round(30 + (seed * 19) % 300);
+    const bedDelta = (seed % 3) - 1; // -1, 0, +1 from subject beds
+
+    return {
+      id:      1000 + i,
+      price:   Math.round(anchorPrice * priceFactor / 1000) * 1000,
+      date:    new Date(now - daysAgo * 24 * 60 * 60 * 1000),
+      ppdType: ([ppdType, ppdType, ppdType === 'S' ? 'T' : ppdType, 'T'] as const)[seed % 4] as Comp['ppdType'],
+      beds:    subject.beds != null ? Math.max(1, subject.beds + bedDelta) : undefined,
+      areaSqm: subject.areaSqm != null ? subject.areaSqm * (0.85 + (seed / 17) * 0.30) : undefined,
+      distance: 200 + seed * 80,
+    };
+  });
+
+  return comps;
+}
+
+/**
  * Build candidate set from database with intelligent fallback logic
  */
 export async function buildCandidateSet(
@@ -173,7 +243,7 @@ export async function buildCandidateSet(
   radiusM: number = 1609 // 1 mile in meters
 ): Promise<Comp[]> {
   const pool = await getPool();
-  if (!pool) return [];
+  if (!pool) return buildDemoComps(subject);
 
   const conn = await pool.getConnection();
   try {
