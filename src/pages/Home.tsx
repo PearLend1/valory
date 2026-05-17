@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useState, useMemo } from "react";
 import {
@@ -20,6 +20,33 @@ export default function Home() {
     if (num >= 1000000) return `£${(num / 1000000).toFixed(1)}m`;
     if (num >= 1000) return `£${Math.round(num / 1000)}k`;
     return `£${num.toLocaleString()}`;
+  };
+
+  const [, navigate] = useLocation();
+  const [postcodeInput, setPostcodeInput] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const autocompleteQuery = trpc.postcode.autocomplete.useQuery(
+    { query: postcodeInput },
+    { enabled: postcodeInput.length >= 2 && showSuggestions, staleTime: 30000 }
+  );
+
+  const handlePostcodeChange = (value: string) => {
+    const upper = value.toUpperCase();
+    setPostcodeInput(upper);
+    setShowSuggestions(upper.length >= 2);
+  };
+
+  const handleSelect = (postcode: string) => {
+    setPostcodeInput(postcode);
+    setShowSuggestions(false);
+  };
+
+  const handleGetValuation = () => {
+    const trimmed = postcodeInput.trim();
+    if (trimmed.length >= 2) {
+      navigate(`/sell?postcode=${encodeURIComponent(trimmed)}`);
+    }
   };
 
   return (
@@ -77,86 +104,71 @@ export default function Home() {
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white leading-tight tracking-tight">
               The smarter way to
               <span className="block bg-gradient-to-r from-accent via-rose-400 to-amber-500 bg-clip-text text-transparent">
-                sell or find a home
+                sell your home
               </span>
             </h1>
             <p className="text-lg md:text-xl text-foreground/75 max-w-2xl mx-auto leading-relaxed font-medium">
-              Transparent valuations. Fair agent matching. Privacy-first design. Valory puts you in control of your property journey.
+              Transparent valuations. Fair agent matching. You stay in control.
             </p>
           </div>
 
-          {/* ===== THREE-WAY SPLIT ENTRY ===== */}
-          <div className="mt-16 md:mt-20 max-w-4xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-              {/* I'm Selling */}
-              <Link href="/sell">
-                <div className="group relative bg-card/50 backdrop-blur-xl border border-accent/20 rounded-2xl p-8 hover:border-accent/50 hover:bg-card/80 transition-all duration-500 ease-out cursor-pointer glow-copper-sm hover:glow-copper h-full">
-                  <div className="space-y-5">
-                    <div className="w-12 h-12 bg-gradient-to-br from-accent to-primary rounded-xl flex items-center justify-center shadow-lg glow-copper-sm">
-                      <TrendingUp className="w-6 h-6 text-background" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-white mb-2">I'm selling</h2>
-                      <p className="text-foreground/65 text-sm leading-relaxed">
-                        Get a free, transparent valuation and connect with quality agents when you're ready.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 text-accent font-semibold text-sm group-hover:gap-3 transition-all">
-                      <span>Get your valuation</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </div>
-                  </div>
+          {/* ===== ADDRESS ENTRY ===== */}
+          <div className="mt-14 md:mt-16 max-w-2xl mx-auto w-full">
+            <div className="relative">
+              <div className="flex rounded-2xl overflow-hidden border border-accent/30 bg-slate-900/80 backdrop-blur-sm shadow-2xl focus-within:border-accent/50 transition-colors duration-300">
+                <div className="relative flex-1">
+                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-accent/60 pointer-events-none" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Enter your postcode..."
+                    value={postcodeInput}
+                    onChange={(e) => handlePostcodeChange(e.target.value)}
+                    onFocus={() => { if (postcodeInput.length >= 2) setShowSuggestions(true); }}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleGetValuation(); }}
+                    className="w-full h-16 bg-transparent pl-12 pr-4 text-white placeholder:text-foreground/35 text-lg font-medium outline-none uppercase tracking-wider"
+                  />
                 </div>
-              </Link>
+                <button
+                  onClick={handleGetValuation}
+                  disabled={postcodeInput.trim().length < 2}
+                  className="px-6 md:px-8 h-16 bg-gradient-to-r from-accent to-primary text-background font-bold text-sm md:text-base whitespace-nowrap flex items-center gap-2 hover:opacity-90 active:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                >
+                  Get my valuation
+                  <ArrowRight size={18} />
+                </button>
+              </div>
 
-              {/* I'm Buying */}
-              <Link href="/discover">
-                <div className="group relative bg-card/50 backdrop-blur-xl border border-accent/20 rounded-2xl p-8 hover:border-accent/50 hover:bg-card/80 transition-all duration-500 ease-out cursor-pointer glow-copper-sm hover:glow-copper h-full">
-                  <div className="space-y-5">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center shadow-lg glow-copper-sm">
-                      <HomeIcon className="w-6 h-6 text-background" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-white mb-2">I'm buying</h2>
-                      <p className="text-foreground/65 text-sm leading-relaxed">
-                        Discover properties with momentum tracking, honest signals, and no pressure tactics.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 text-accent font-semibold text-sm group-hover:gap-3 transition-all">
-                      <span>Explore properties</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </div>
-                  </div>
+              {/* Autocomplete dropdown */}
+              {showSuggestions && autocompleteQuery.data && autocompleteQuery.data.postcodes.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-accent/20 rounded-xl shadow-2xl z-30 overflow-hidden">
+                  {autocompleteQuery.data.postcodes.map((pc: string, i: number) => (
+                    <button
+                      key={pc}
+                      type="button"
+                      onMouseDown={() => handleSelect(pc)}
+                      className={`w-full text-left px-5 py-3.5 flex items-center gap-3 hover:bg-accent/10 transition-colors ${i > 0 ? 'border-t border-slate-800' : ''}`}
+                    >
+                      <MapPin size={16} className="text-accent/60 flex-shrink-0" />
+                      <span className="font-medium tracking-wider text-sm text-white">{pc}</span>
+                    </button>
+                  ))}
                 </div>
-              </Link>
+              )}
 
-              {/* I'm an Agent */}
-              <Link href="/agents">
-                <div className="group relative bg-card/50 backdrop-blur-xl border border-accent/30 rounded-2xl p-8 hover:border-accent/60 hover:bg-card/80 transition-all duration-500 ease-out cursor-pointer hover:glow-copper h-full">
-                  {/* Badge */}
-                  <div className="absolute top-4 right-4 px-2 py-0.5 bg-accent/20 border border-accent/30 rounded-full text-accent text-xs font-bold tracking-wide">
-                    AGENTS
-                  </div>
-                  <div className="space-y-5">
-                    <div className="w-12 h-12 bg-gradient-to-br from-amber-600 to-accent rounded-xl flex items-center justify-center shadow-lg">
-                      <Users className="w-6 h-6 text-background" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-white mb-2">I'm an agent</h2>
-                      <p className="text-foreground/65 text-sm leading-relaxed">
-                        Get matched with serious, pre-qualified sellers in your area. Register free.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 text-accent font-semibold text-sm group-hover:gap-3 transition-all">
-                      <span>Register your agency</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </div>
-                  </div>
+              {/* Loading state */}
+              {showSuggestions && autocompleteQuery.isLoading && postcodeInput.length >= 2 && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-accent/20 rounded-xl shadow-2xl z-30 p-4 flex items-center gap-3">
+                  <Loader2 size={16} className="animate-spin text-accent" />
+                  <span className="text-sm text-foreground/50">Finding postcodes...</span>
                 </div>
-              </Link>
-
+              )}
             </div>
+
+            <p className="text-center text-xs text-foreground/40 mt-4 flex items-center justify-center gap-1.5">
+              <Shield size={12} className="text-accent/40" />
+              No account needed · Your details are private and never shared
+            </p>
           </div>
 
           {/* Trust Signals */}
@@ -185,7 +197,7 @@ export default function Home() {
               <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center border border-accent/20 glow-copper-sm">
                 <TrendingUp className="w-7 h-7 text-accent" />
               </div>
-              <h3 className="font-bold text-xl text-white">Four-Layer Valuations</h3>
+              <h3 className="font-bold text-xl text-white">Transparent valuations</h3>
               <p className="text-foreground/65 leading-relaxed text-sm">
                 Transparent estimates powered by public data, market comparables, agent insights, and platform intelligence. You see exactly what each layer contributes.
               </p>
@@ -194,7 +206,7 @@ export default function Home() {
               <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center border border-accent/20 glow-copper-sm">
                 <Star className="w-7 h-7 text-accent" />
               </div>
-              <h3 className="font-bold text-xl text-white">Fair Agent Ranking</h3>
+              <h3 className="font-bold text-xl text-white">Fair agent matching</h3>
               <p className="text-foreground/65 leading-relaxed text-sm">
                 Agents compete on quality, not speed. We score accuracy, marketing, engagement, expertise, and responsiveness so the best agents rise to the top.
               </p>
@@ -203,7 +215,7 @@ export default function Home() {
               <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center border border-accent/20 glow-copper-sm">
                 <Shield className="w-7 h-7 text-accent" />
               </div>
-              <h3 className="font-bold text-xl text-white">You Stay in Control</h3>
+              <h3 className="font-bold text-xl text-white">You stay in control</h3>
               <p className="text-foreground/65 leading-relaxed text-sm">
                 Your identity is protected until you choose to connect. No unsolicited contact, no scarcity tactics, no pressure. Just honest property data.
               </p>
