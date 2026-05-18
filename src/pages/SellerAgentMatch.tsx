@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearch, useLocation } from 'wouter';
+import { useSearch } from 'wouter';
 import {
   ArrowLeft, MapPin, CheckCircle2, ChevronRight,
   Home, Building, Building2, Layers, Star, Clock, TrendingUp,
@@ -135,7 +135,6 @@ function AgentCard({
 
 export default function SellerAgentMatch() {
   const search = useSearch();
-  const [, navigate] = useLocation();
   const p = new URLSearchParams(search);
 
   const postcode  = p.get('postcode')  ?? '';
@@ -189,7 +188,7 @@ export default function SellerAgentMatch() {
 
         {/* Back */}
         <button
-          onClick={() => navigate(-1 as any)}
+          onClick={() => window.history.back()}
           className="flex items-center gap-1.5 text-slate-500 hover:text-white transition-colors text-sm font-medium"
         >
           <ArrowLeft size={16} />

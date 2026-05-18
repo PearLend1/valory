@@ -126,7 +126,7 @@ export default function SellerValuationResult() {
       <div className="min-h-screen bg-slate-950 pt-16">
         <div className="max-w-lg mx-auto px-4 pt-10 pb-20">
           <button
-            onClick={() => navigate(-1 as any)}
+            onClick={() => window.history.back()}
             className="flex items-center gap-1.5 text-slate-500 hover:text-white transition-colors text-sm font-medium mb-8"
           >
             <ArrowLeft size={16} />
@@ -139,7 +139,7 @@ export default function SellerValuationResult() {
             <h2 className="text-lg font-bold text-white">Valuation unavailable</h2>
             <p className="text-slate-400 text-sm leading-relaxed">{msg}</p>
             <button
-              onClick={() => navigate(-1 as any)}
+              onClick={() => window.history.back()}
               className="mt-2 w-full h-12 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm transition-colors"
             >
               Edit property details
@@ -162,7 +162,7 @@ export default function SellerValuationResult() {
 
         {/* Back */}
         <button
-          onClick={() => navigate(-1 as any)}
+          onClick={() => window.history.back()}
           className="flex items-center gap-1.5 text-slate-500 hover:text-white transition-colors text-sm font-medium"
         >
           <ArrowLeft size={16} />
