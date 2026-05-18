@@ -14,6 +14,8 @@ import { vendorAcceptanceRouter } from './routers/vendorAcceptance';
 import { postcodeRouter } from './routers/postcode';
 import { betaSignups, agentRegistrations } from './schema';
 import { DEMO_MODE } from './demo-mode';
+import { DEMO_MATCHED_AGENTS } from './mock-data';
+import { z } from 'zod';
 
 export const appRouter = router({
   system: systemRouter,
@@ -132,6 +134,28 @@ export const appRouter = router({
         } catch (error) {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create agent registration' });
         }
+      }),
+  }),
+
+  // ============ SELLER LEAD CAPTURE (PUBLIC) ============
+  seller: router({
+    submitLead: publicProcedure
+      .input(z.object({
+        name:      z.string().min(2).max(255),
+        email:     z.string().email(),
+        phone:     z.string().min(9).max(20),
+        postcode:  z.string().min(3).max(8),
+        estimate:  z.number().positive().optional(),
+        type:      z.string().optional(),
+        beds:      z.number().int().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        if (DEMO_MODE) {
+          console.log('[Demo Mode] Seller lead:', input);
+          return { success: true, agents: DEMO_MATCHED_AGENTS };
+        }
+        // TODO: persist lead + run real agent matching
+        return { success: true, agents: DEMO_MATCHED_AGENTS };
       }),
   }),
 

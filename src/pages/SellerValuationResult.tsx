@@ -312,7 +312,19 @@ export default function SellerValuationResult() {
 
       {/* Fixed CTA bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur-sm border-t border-slate-800/80 px-4 py-4 space-y-2.5">
-        <button className="w-full h-13 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-bold text-sm transition-colors flex items-center justify-center gap-2">
+        <button
+          onClick={() => {
+            const q = new URLSearchParams();
+            if (postcode)              q.set('postcode',  postcode);
+            if (type)                  q.set('type',      type);
+            if (beds)                  q.set('beds',      beds);
+            q.set('estimate', String(Math.round(valuation.estimate)));
+            q.set('low',      String(Math.round(valuation.lowBand)));
+            q.set('high',     String(Math.round(valuation.highBand)));
+            navigate(`/sell/agents?${q}`);
+          }}
+          className="w-full h-13 rounded-xl bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-bold text-sm transition-colors flex items-center justify-center gap-2"
+        >
           <Users size={16} />
           Get matched with local agents
           <ChevronRight size={15} className="opacity-70" />

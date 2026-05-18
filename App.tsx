@@ -10,6 +10,7 @@ import PropertyDetail from "@/pages/PropertyDetail";
 import AgentDashboard from "@/pages/AgentDashboard";
 import SellerValuation from "@/pages/SellerValuation";
 import SellerValuationResult from "@/pages/SellerValuationResult";
+import SellerAgentMatch from "@/pages/SellerAgentMatch";
 import SavedProperties from "@/pages/SavedProperties";
 import VendorDashboard from "@/pages/VendorDashboard";
 import BuyerDiscovery from "@/pages/BuyerDiscovery";
@@ -27,6 +28,7 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Home} />
       <Route path={"/sell/valuation"} component={SellerValuationResult} />
+      <Route path={"/sell/agents"} component={SellerAgentMatch} />
       <Route path={"/sell"} component={SellerValuation} />
       <Route path={"/property/:id"} component={PropertyDetail} />
       <Route path={"/discover"} component={BuyerDiscovery} />

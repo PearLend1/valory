@@ -773,6 +773,54 @@ export const DEMO_VALUATIONS = [
   },
 ];
 
+// Matched agents returned to sellers after lead capture
+export const DEMO_MATCHED_AGENTS = [
+  {
+    id: 101,
+    name: 'Sarah Mitchell',
+    agency: 'Fenyx Rose Estates',
+    title: 'Senior Valuer',
+    coverageLabel: 'Crewkerne, Ilminster, Chard',
+    coveragePostcodes: ['TA18', 'TA19', 'TA20', 'TA17'],
+    yearsExperience: 8,
+    propertiesSoldLocal: 47,
+    avgSaleTimeDays: 42,
+    qualityScore: 88,
+    specialisms: ['Character homes', 'Rural properties', 'First-time sellers'],
+    bio: 'Specialist in Somerset character properties with a focus on honest, data-led valuations.',
+  },
+  {
+    id: 102,
+    name: 'Tom Hartley',
+    agency: 'Hartley & Co',
+    title: 'Director',
+    coverageLabel: 'Chard, Crewkerne, Axminster',
+    coveragePostcodes: ['TA20', 'TA18', 'EX13'],
+    yearsExperience: 14,
+    propertiesSoldLocal: 83,
+    avgSaleTimeDays: 38,
+    qualityScore: 91,
+    specialisms: ['Period homes', 'Downsizing', 'Land & development'],
+    bio: 'Established independent agency covering south Somerset and east Devon since 2010.',
+  },
+  {
+    id: 103,
+    name: 'Rebecca Oakes',
+    agency: 'Oliver James Property',
+    title: 'Associate Director',
+    coverageLabel: 'Ilminster, Chard, South Petherton',
+    coveragePostcodes: ['TA19', 'TA20', 'TA13'],
+    yearsExperience: 6,
+    propertiesSoldLocal: 34,
+    avgSaleTimeDays: 51,
+    qualityScore: 82,
+    specialisms: ['Family homes', 'New builds', 'Lettings'],
+    bio: 'Dedicated to a personal, low-pressure approach for sellers at every stage.',
+  },
+];
+
+export type MatchedAgent = typeof DEMO_MATCHED_AGENTS[number];
+
 // Mock Agent Stats
 export const DEMO_AGENT_STATS = {
   totalListings: 6,
