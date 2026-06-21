@@ -31,17 +31,13 @@ export default function Header() {
   };
 
   const handleHomeClick = () => {
-    if (user?.role === 'agent') {
-      navigate('/agent-dashboard');
-    } else if (user?.role === 'vendor') {
-      navigate('/vendor/dashboard');
-    } else {
-      navigate('/');
-    }
+    navigate('/');
   };
 
-  const handleProfileClick = () => {
-    navigate('/profile');
+  const getDashboardPath = (role?: string) => {
+    if (role === 'agent') return '/agent-dashboard';
+    if (role === 'vendor') return '/vendor/dashboard';
+    return null;
   };
 
   return (
@@ -93,46 +89,25 @@ export default function Header() {
                   <p className="text-xs text-slate-400">{getRoleLabel(user.role)}</p>
                 </div>
 
-                {/* Role-specific items */}
-                {user.role === 'agent' && (
-                  <>
-                    <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Agent Profile</span>
-                    </DropdownMenuItem>
-                  </>
-                )}
+                <DropdownMenuItem onClick={() => navigate('/')} className="cursor-pointer">
+                  <Home className="mr-2 h-4 w-4" />
+                  <span>Home</span>
+                </DropdownMenuItem>
 
-                {user.role === 'public' && (
-                  <>
-                    <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>My Profile</span>
-                    </DropdownMenuItem>
-                  </>
-                )}
+                <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>My Profile</span>
+                </DropdownMenuItem>
 
-                {user.role === 'vendor' && (
-                  <>
-                    <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Seller Profile</span>
-                    </DropdownMenuItem>
-                  </>
-                )}
-
-                {user.role === 'admin' && (
-                  <>
-                    <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Admin Panel</span>
-                    </DropdownMenuItem>
-                  </>
+                {getDashboardPath(user.role) && (
+                  <DropdownMenuItem onClick={() => navigate(getDashboardPath(user.role)!)} className="cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </DropdownMenuItem>
                 )}
 
                 <DropdownMenuSeparator className="bg-slate-700" />
 
-                {/* Logout */}
                 <DropdownMenuItem
                   onClick={logout}
                   className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-400/10"

@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUp, ArrowDown, TrendingUp, MapPin, Star, Clock, Users, Eye, Heart, X, Pin } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowUp, ArrowDown, TrendingUp, MapPin, Star, Clock, Users, Eye, Heart, X, Pin, Sparkles } from 'lucide-react';
 import { AgentSentiment } from '@/components/AgentSentiment';
+import ValorEvestFund from '@/components/ValorEvestFund';
 
 export default function SellerDashboard() {
   const [property, setProperty] = useState({
@@ -89,6 +91,15 @@ export default function SellerDashboard() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <Tabs defaultValue="overview" className="space-y-8">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="valorevest" className="gap-1.5">
+            <Sparkles className="w-3.5 h-3.5" /> ValorEvest Fund
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-8 mt-0">
         {/* Overview Section */}
         <section className="space-y-4">
           <h2 className="text-2xl font-bold">Overview</h2>
@@ -337,6 +348,12 @@ export default function SellerDashboard() {
             </CardContent>
           </Card>
         </section>
+        </TabsContent>
+
+        <TabsContent value="valorevest" className="mt-0">
+          <ValorEvestFund />
+        </TabsContent>
+      </Tabs>
       </div>
     </div>
   );
