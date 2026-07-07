@@ -6,7 +6,6 @@ import {
   Comparable,
   MarketContext,
   LocationData,
-  PropertyMarketIntelProvider,
   ZooplaProvider,
 } from './external-data-provider';
 
@@ -511,48 +510,8 @@ describe('ExternalDataProviderRegistry', () => {
   });
 });
 
-describe('PropertyMarketIntelProvider', () => {
-  let provider: PropertyMarketIntelProvider;
-
-  beforeEach(() => {
-    provider = new PropertyMarketIntelProvider('test-api-key');
-  });
-
-  it('should have correct name', () => {
-    expect(provider.name).toBe('Property Market Intel');
-  });
-
-  it('should be available with API key', async () => {
-    const available = await provider.isAvailable();
-    expect(available).toBe(true);
-  });
-
-  it('should not be available without API key', async () => {
-    const emptyProvider = new PropertyMarketIntelProvider('');
-    const available = await emptyProvider.isAvailable();
-    expect(available).toBe(false);
-  });
-
-  it('should return null for valuation bracket (not yet implemented)', async () => {
-    const result = await provider.getValuationBracket('BS1 4QA', 'Detached', 4, 2);
-    expect(result).toBeNull();
-  });
-
-  it('should return empty array for comparables (not yet implemented)', async () => {
-    const result = await provider.getComparables('BS1 4QA', 'Detached', 4, 2);
-    expect(result).toEqual([]);
-  });
-
-  it('should return null for market context (not yet implemented)', async () => {
-    const result = await provider.getLocalMarketContext('BS1 4QA');
-    expect(result).toBeNull();
-  });
-
-  it('should return null for location intelligence (not yet implemented)', async () => {
-    const result = await provider.getLocationIntelligence('BS1 4QA');
-    expect(result).toBeNull();
-  });
-});
+// PropertyMarketIntelProvider tests removed 2026-07-07: the provider stub
+// was deleted from external-data-provider.ts (StreetData + Zoopla remain).
 
 describe('ZooplaProvider', () => {
   let provider: ZooplaProvider;

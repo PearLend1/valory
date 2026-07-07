@@ -8,7 +8,7 @@
  * This job runs monthly to update historical price data for valuation comparables
  */
 
-import { getPool } from '../db';
+import { getPool } from './db';
 
 export interface SoldPrice {
   id: string; // Transaction ID

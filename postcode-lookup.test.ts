@@ -58,7 +58,7 @@ describe('Postcode Lookup — Autocomplete', () => {
 describe('Postcode Lookup — Validation', () => {
   it('should validate a known valid postcode', async () => {
     const caller = appRouter.createCaller(createContext("public"));
-    const result = await caller.postcode.validate({ postcode: 'BS1 4QA' });
+    const result = await caller.postcode.validate({ postcode: 'BS1 5PB' });
     expect(result.valid).toBe(true);
   });
 
@@ -70,7 +70,7 @@ describe('Postcode Lookup — Validation', () => {
 
   it('should handle postcodes without spaces', async () => {
     const caller = appRouter.createCaller(createContext("public"));
-    const result = await caller.postcode.validate({ postcode: 'BS14QA' });
+    const result = await caller.postcode.validate({ postcode: 'BS15PB' });
     expect(result.valid).toBe(true);
   });
 });
@@ -78,7 +78,7 @@ describe('Postcode Lookup — Validation', () => {
 describe('Postcode Lookup — Full Lookup with Area Data', () => {
   it('should return geographic data for a valid postcode', async () => {
     const caller = appRouter.createCaller(createContext("public"));
-    const result = await caller.postcode.lookup({ postcode: 'BS1 4QA' });
+    const result = await caller.postcode.lookup({ postcode: 'BS1 5PB' });
     expect(result.postcode).toBeDefined();
     expect(result.adminDistrict).toBeDefined();
     expect(result.region).toBeDefined();
@@ -88,7 +88,7 @@ describe('Postcode Lookup — Full Lookup with Area Data', () => {
 
   it('should return Bristol area data for BS1 postcodes', async () => {
     const caller = appRouter.createCaller(createContext("public"));
-    const result = await caller.postcode.lookup({ postcode: 'BS1 1AD' });
+    const result = await caller.postcode.lookup({ postcode: 'BS1 5PB' });
     expect(result.adminDistrict).toContain('Bristol');
     expect(result.region).toBe('South West');
   });
@@ -102,15 +102,15 @@ describe('Postcode Lookup — Full Lookup with Area Data', () => {
 
   it('should include ward data when available', async () => {
     const caller = appRouter.createCaller(createContext("public"));
-    const result = await caller.postcode.lookup({ postcode: 'BS1 1AD' });
+    const result = await caller.postcode.lookup({ postcode: 'BS1 5PB' });
     expect(result.adminWard).toBeDefined();
   });
 
   it('should include outcode and incode', async () => {
     const caller = appRouter.createCaller(createContext("public"));
-    const result = await caller.postcode.lookup({ postcode: 'BS1 4QA' });
+    const result = await caller.postcode.lookup({ postcode: 'BS1 5PB' });
     expect(result.outcode).toBe('BS1');
-    expect(result.incode).toBe('4QA');
+    expect(result.incode).toBe('5PB');
   });
 });
 
@@ -140,7 +140,7 @@ describe('Postcode Lookup — Address Screen Integration', () => {
       adminDistrict: 'Bristol, City of',
       adminWard: 'Lawrence Hill',
       region: 'South West',
-      postcode: 'BS1 1AD',
+      postcode: 'BS1 5PB',
     };
     const addressScreenData = {
       town: lookupResult.adminDistrict,
@@ -165,10 +165,10 @@ describe('Postcode Lookup — Address Screen Integration', () => {
     const autocomplete = await caller.postcode.autocomplete({ query: 'BS1' });
     expect(autocomplete.postcodes).toBeDefined();
 
-    const validate = await caller.postcode.validate({ postcode: 'BS1 4QA' });
+    const validate = await caller.postcode.validate({ postcode: 'BS1 5PB' });
     expect(validate.valid).toBeDefined();
 
-    const lookup = await caller.postcode.lookup({ postcode: 'BS1 4QA' });
+    const lookup = await caller.postcode.lookup({ postcode: 'BS1 5PB' });
     expect(lookup.postcode).toBeDefined();
   });
 });

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { premiumEarlyLeadSignals, properties, vendorLeadStates } from '../drizzle/schema';
-import type { InsertPremiumEarlyLeadSignal } from '../drizzle/schema';
+import { premiumEarlyLeadSignals, properties, vendorLeadStates } from './drizzle/schema';
+import type { InsertPremiumEarlyLeadSignal } from './drizzle/schema';
 import { getReadinessStage, getLaunchTiming } from './lead-state-manager';
 
 /**
