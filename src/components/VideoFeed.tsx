@@ -312,7 +312,7 @@ export default function VideoFeed({
 
   if (isLoading) {
     return (
-      <div className="h-[calc(100dvh-3.5rem)] flex items-center justify-center bg-black">
+      <div className="fixed inset-x-0 top-14 bottom-0 z-30 flex items-center justify-center bg-black">
         <div className="text-white/60 text-sm animate-pulse">Loading properties…</div>
       </div>
     );
@@ -320,7 +320,7 @@ export default function VideoFeed({
 
   if (visible.length === 0) {
     return (
-      <div className="h-[calc(100dvh-3.5rem)] flex flex-col items-center justify-center bg-black text-center px-6">
+      <div className="fixed inset-x-0 top-14 bottom-0 z-30 flex flex-col items-center justify-center bg-black text-center px-6">
         <p className="text-white text-lg font-semibold">You're all caught up</p>
         <p className="text-white/60 text-sm mt-2">No more properties match your filters right now. Check back soon or widen your search.</p>
       </div>
@@ -328,12 +328,12 @@ export default function VideoFeed({
   }
 
   return (
-    <div className="relative bg-black">
+    <div className="fixed inset-x-0 top-14 bottom-0 z-30 bg-black">
       {/* Stage: full-bleed on mobile, centred 9:16 column on desktop */}
-      <div className="mx-auto h-[calc(100dvh-3.5rem)] w-full md:max-w-[440px] relative">
+      <div className="mx-auto h-full w-full md:max-w-[440px] relative md:py-2">
         <div
           ref={containerRef}
-          className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-contain"
+          className="h-full w-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide overscroll-contain md:rounded-2xl"
         >
           {visible.map((p, i) => (
             <div key={p.id} className="h-full w-full snap-start">
