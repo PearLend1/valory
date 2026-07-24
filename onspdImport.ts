@@ -7,7 +7,7 @@
  * This job runs monthly to keep postcode geocoding data current
  */
 
-import { getPool } from '../db';
+import { getPool } from './db';
 
 export interface PostcodeRecord {
   postcode: string;

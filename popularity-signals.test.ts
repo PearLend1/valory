@@ -1,325 +1,149 @@
+/**
+ * Tests for the privacy-safe popularity signals module.
+ * Updated 2026-07-07 to match the current exported API
+ * (older tests referenced a removed richer API).
+ */
 import { describe, it, expect } from 'vitest';
 import {
   calculatePopularityTier,
-  getPopularityLabel,
-  getPopularityDescription,
   getPopularitySignal,
   shouldShowPopularityBadge,
   getSaveCountDisplay,
-  getViewCountDisplay,
   getTimeBasedPopularityLabel,
-  getAreaPopularityLabel,
-  calculatePopularityScore,
-  getVendorEngagementSummary,
   type PopularityMetrics,
 } from './popularity-signals';
 
+const baseMetrics: PopularityMetrics = {
+  saveCount: 0,
+  viewCount: 0,
+  recentSaveCount: 0,
+  recentViewCount: 0,
+  inquiryCount: 0,
+};
+
 describe('Popularity Signals', () => {
-  const baseMetrics: PopularityMetrics = {
-    saveCount: 0,
-    viewCount: 0,
-    recentSaveCount: 0,
-    recentViewCount: 0,
-    inquiryCount: 0,
-  };
-
   describe('calculatePopularityTier', () => {
-    it('should return high tier for 20+ recent saves', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, recentSaveCount: 20 };
-      expect(calculatePopularityTier(metrics)).toBe('high');
+    it('returns high tier for 10+ total saves', () => {
+      expect(calculatePopularityTier({ ...baseMetrics, saveCount: 10 })).toBe('high');
     });
 
-    it('should return high tier for 50+ recent views', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, recentViewCount: 50 };
-      expect(calculatePopularityTier(metrics)).toBe('high');
+    it('returns high tier for 5+ recent saves', () => {
+      expect(calculatePopularityTier({ ...baseMetrics, recentSaveCount: 5 })).toBe('high');
     });
 
-    it('should return medium tier for 10-19 recent saves', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, recentSaveCount: 15 };
-      expect(calculatePopularityTier(metrics)).toBe('medium');
+    it('returns high tier for 3+ inquiries', () => {
+      expect(calculatePopularityTier({ ...baseMetrics, inquiryCount: 3 })).toBe('high');
     });
 
-    it('should return medium tier for 30-49 recent views', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, recentViewCount: 40 };
-      expect(calculatePopularityTier(metrics)).toBe('medium');
+    it('returns medium tier for 3-9 total saves', () => {
+      expect(calculatePopularityTier({ ...baseMetrics, saveCount: 3 })).toBe('medium');
+      expect(calculatePopularityTier({ ...baseMetrics, saveCount: 9 })).toBe('medium');
     });
 
-    it('should return low tier for below thresholds', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, recentSaveCount: 5, recentViewCount: 10 };
-      expect(calculatePopularityTier(metrics)).toBe('low');
-    });
-  });
-
-  describe('getPopularityLabel', () => {
-    it('should return "Popular" for high tier', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, recentSaveCount: 20 };
-      expect(getPopularityLabel(metrics)).toBe('Popular');
+    it('returns medium tier for 2-4 recent saves', () => {
+      expect(calculatePopularityTier({ ...baseMetrics, recentSaveCount: 2 })).toBe('medium');
     });
 
-    it('should return "Growing interest" for medium tier', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, recentSaveCount: 15 };
-      expect(getPopularityLabel(metrics)).toBe('Growing interest');
+    it('returns medium tier for 20+ recent views', () => {
+      expect(calculatePopularityTier({ ...baseMetrics, recentViewCount: 20 })).toBe('medium');
     });
 
-    it('should return empty string for low tier', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics };
-      expect(getPopularityLabel(metrics)).toBe('');
-    });
-  });
-
-  describe('getPopularityDescription', () => {
-    it('should show week saves for high tier', () => {
-      const metrics: PopularityMetrics = {
-        ...baseMetrics,
-        saveCount: 50,
-        recentSaveCount: 25,
-      };
-      const desc = getPopularityDescription(metrics);
-      expect(desc).toContain('25 saves this week');
-      expect(desc).toContain('high buyer interest');
+    it('returns medium tier for at least one inquiry', () => {
+      expect(calculatePopularityTier({ ...baseMetrics, inquiryCount: 1 })).toBe('medium');
     });
 
-    it('should show total saves for medium tier', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, saveCount: 15, recentSaveCount: 10 };
-      const desc = getPopularityDescription(metrics);
-      expect(desc).toContain('15 saves');
-      expect(desc).toContain('growing interest');
-    });
-
-    it('should show save count for low tier with saves', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, saveCount: 5 };
-      const desc = getPopularityDescription(metrics);
-      expect(desc).toBe('5 saves');
-    });
-
-    it('should return empty string for no saves', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics };
-      expect(getPopularityDescription(metrics)).toBe('');
+    it('returns low tier below all thresholds', () => {
+      expect(
+        calculatePopularityTier({ ...baseMetrics, saveCount: 2, recentViewCount: 19 })
+      ).toBe('low');
     });
   });
 
   describe('getPopularitySignal', () => {
-    it('should return high signal for high tier', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, recentSaveCount: 20 };
-      const signal = getPopularitySignal(metrics);
+    it('returns a "Popular" high-urgency signal for high tier', () => {
+      const signal = getPopularitySignal({ ...baseMetrics, saveCount: 12 });
       expect(signal).not.toBeNull();
-      expect(signal?.label).toBe('Popular');
-      expect(signal?.urgency).toBe('high');
-      expect(signal?.icon).toBe('🔥');
+      expect(signal!.label).toBe('Popular');
+      expect(signal!.urgency).toBe('high');
+      expect(signal!.icon).toBe('🔥');
     });
 
-    it('should return medium signal for medium tier', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, recentSaveCount: 15 };
-      const signal = getPopularitySignal(metrics);
+    it('returns a "Growing Interest" medium-urgency signal for medium tier', () => {
+      const signal = getPopularitySignal({ ...baseMetrics, saveCount: 4 });
       expect(signal).not.toBeNull();
-      expect(signal?.label).toBe('Growing interest');
-      expect(signal?.urgency).toBe('medium');
-      expect(signal?.icon).toBe('📈');
+      expect(signal!.label).toBe('Growing Interest');
+      expect(signal!.urgency).toBe('medium');
     });
 
-    it('should return null for low tier', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics };
-      expect(getPopularitySignal(metrics)).toBeNull();
+    it('returns null for low tier', () => {
+      expect(getPopularitySignal(baseMetrics)).toBeNull();
+    });
+
+    it('describes buyer interest in consumer-friendly language', () => {
+      const signal = getPopularitySignal({ ...baseMetrics, recentSaveCount: 6 });
+      expect(signal!.description.toLowerCase()).toContain('interest');
     });
   });
 
   describe('shouldShowPopularityBadge', () => {
-    it('should return true for high tier', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, recentSaveCount: 20 };
-      expect(shouldShowPopularityBadge(metrics)).toBe(true);
+    it('shows a badge for high tier', () => {
+      expect(shouldShowPopularityBadge({ ...baseMetrics, saveCount: 15 })).toBe(true);
     });
 
-    it('should return true for medium tier', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics, recentSaveCount: 15 };
-      expect(shouldShowPopularityBadge(metrics)).toBe(true);
+    it('shows a badge for medium tier', () => {
+      expect(shouldShowPopularityBadge({ ...baseMetrics, inquiryCount: 1 })).toBe(true);
     });
 
-    it('should return false for low tier', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics };
-      expect(shouldShowPopularityBadge(metrics)).toBe(false);
+    it('hides the badge for low tier', () => {
+      expect(shouldShowPopularityBadge(baseMetrics)).toBe(false);
     });
   });
 
   describe('getSaveCountDisplay', () => {
-    it('should return empty string for 0 saves', () => {
+    it('returns empty string for zero saves', () => {
       expect(getSaveCountDisplay(0)).toBe('');
     });
 
-    it('should return "1 save" for 1 save', () => {
-      expect(getSaveCountDisplay(1)).toBe('1 save');
+    it('uses singular phrasing for one save', () => {
+      expect(getSaveCountDisplay(1)).toBe('1 buyer saved this');
     });
 
-    it('should return "X saves" for 2-9 saves', () => {
-      expect(getSaveCountDisplay(5)).toBe('5 saves');
+    it('uses plural phrasing below five saves', () => {
+      expect(getSaveCountDisplay(4)).toBe('4 buyers saved this');
     });
 
-    it('should return "X saves" for 10-99 saves', () => {
-      expect(getSaveCountDisplay(50)).toBe('50 saves');
+    it('switches to "watching" phrasing from five saves', () => {
+      expect(getSaveCountDisplay(7)).toBe('7+ buyers watching');
     });
 
-    it('should round to nearest 10 for 100+ saves', () => {
-      expect(getSaveCountDisplay(150)).toContain('+');
-    });
-  });
-
-  describe('getViewCountDisplay', () => {
-    it('should return empty string for 0 views', () => {
-      expect(getViewCountDisplay(0)).toBe('');
+    it('rounds down to nearest five between 10 and 49', () => {
+      expect(getSaveCountDisplay(23)).toBe('20+ buyers watching');
     });
 
-    it('should return "X views" for 1-99 views', () => {
-      expect(getViewCountDisplay(50)).toBe('50 views');
-    });
-
-    it('should round to hundreds for 100-999 views', () => {
-      expect(getViewCountDisplay(550)).toContain('00+');
-    });
-
-    it('should show in thousands for 1000+ views', () => {
-      expect(getViewCountDisplay(5500)).toContain('K+');
+    it('caps at 50+ for large counts', () => {
+      expect(getSaveCountDisplay(120)).toBe('50+ buyers watching');
     });
   });
 
   describe('getTimeBasedPopularityLabel', () => {
-    it('should return "Popular this week" for high recent activity', () => {
-      const label = getTimeBasedPopularityLabel(15, 40);
-      expect(label).toBe('Popular this week');
+    it('returns "Very active this week" for 5+ recent saves', () => {
+      expect(getTimeBasedPopularityLabel(5, 0)).toBe('Very active this week');
     });
 
-    it('should return "Growing this week" for medium recent activity', () => {
-      const label = getTimeBasedPopularityLabel(8, 20);
-      expect(label).toBe('Growing this week');
+    it('returns "Active this week" for 2-4 recent saves', () => {
+      expect(getTimeBasedPopularityLabel(2, 0)).toBe('Active this week');
     });
 
-    it('should return empty string for low recent activity', () => {
-      const label = getTimeBasedPopularityLabel(2, 5);
-      expect(label).toBe('');
-    });
-  });
-
-  describe('getAreaPopularityLabel', () => {
-    it('should return "Top home nearby" for 1.5x area average', () => {
-      const label = getAreaPopularityLabel(100, 50);
-      expect(label).toBe('Top home nearby');
+    it('returns view-based label for 20+ recent views', () => {
+      expect(getTimeBasedPopularityLabel(0, 20)).toBe('Lots of views this week');
     });
 
-    it('should return "Above average interest" for above area average', () => {
-      const label = getAreaPopularityLabel(75, 50);
-      expect(label).toBe('Above average interest');
+    it('returns "Getting attention" for 10-19 recent views', () => {
+      expect(getTimeBasedPopularityLabel(0, 12)).toBe('Getting attention');
     });
 
-    it('should return empty string for below area average', () => {
-      const label = getAreaPopularityLabel(40, 50);
-      expect(label).toBe('');
-    });
-  });
-
-  describe('calculatePopularityScore', () => {
-    it('should calculate score between 0-100', () => {
-      const metrics: PopularityMetrics = {
-        ...baseMetrics,
-        recentSaveCount: 20,
-        recentViewCount: 50,
-        saveCount: 100,
-        inquiryCount: 5,
-      };
-      const score = calculatePopularityScore(metrics);
-      expect(score).toBeGreaterThanOrEqual(0);
-      expect(score).toBeLessThanOrEqual(100);
-    });
-
-    it('should give higher score for high engagement', () => {
-      const highMetrics: PopularityMetrics = {
-        ...baseMetrics,
-        recentSaveCount: 20,
-        recentViewCount: 50,
-        saveCount: 100,
-        inquiryCount: 5,
-      };
-      const lowMetrics: PopularityMetrics = {
-        ...baseMetrics,
-        recentSaveCount: 2,
-        recentViewCount: 5,
-        saveCount: 10,
-        inquiryCount: 0,
-      };
-      expect(calculatePopularityScore(highMetrics)).toBeGreaterThan(
-        calculatePopularityScore(lowMetrics)
-      );
-    });
-
-    it('should max out at 100', () => {
-      const metrics: PopularityMetrics = {
-        saveCount: 1000,
-        viewCount: 5000,
-        recentSaveCount: 100,
-        recentViewCount: 500,
-        inquiryCount: 50,
-      };
-      expect(calculatePopularityScore(metrics)).toBeLessThanOrEqual(100);
-    });
-  });
-
-  describe('getVendorEngagementSummary', () => {
-    it('should provide high engagement summary for high tier', () => {
-      const metrics: PopularityMetrics = {
-        ...baseMetrics,
-        saveCount: 50,
-        recentSaveCount: 20,
-      };
-      const summary = getVendorEngagementSummary(metrics);
-      expect(summary.summary).toContain('strong buyer interest');
-      expect(summary.insight).toContain('20 buyers saved');
-    });
-
-    it('should provide medium engagement summary for medium tier', () => {
-      const metrics: PopularityMetrics = {
-        ...baseMetrics,
-        saveCount: 15,
-        recentSaveCount: 10,
-      };
-      const summary = getVendorEngagementSummary(metrics);
-      expect(summary.summary).toContain('moderate buyer interest');
-    });
-
-    it('should provide low engagement summary for low tier', () => {
-      const metrics: PopularityMetrics = { ...baseMetrics };
-      const summary = getVendorEngagementSummary(metrics);
-      expect(summary.summary).toContain('listed and visible');
-    });
-  });
-
-  describe('Privacy and Safety', () => {
-    it('should never expose individual buyer identities', () => {
-      const metrics: PopularityMetrics = {
-        ...baseMetrics,
-        saveCount: 100,
-        recentSaveCount: 50,
-      };
-      const label = getPopularityLabel(metrics);
-      const desc = getPopularityDescription(metrics);
-      expect(label).not.toContain('buyer');
-      expect(desc).not.toContain('name');
-      expect(desc).not.toContain('email');
-    });
-
-    it('should aggregate data without exposing individuals', () => {
-      const metrics: PopularityMetrics = {
-        ...baseMetrics,
-        saveCount: 25,
-      };
-      const display = getSaveCountDisplay(metrics.saveCount);
-      expect(display).toBe('25 saves');
-      // Should show aggregate count, not individual details
-      expect(display).not.toContain('user');
-      expect(display).not.toContain('buyer');
-    });
-
-    it('should round large numbers for privacy', () => {
-      const display = getSaveCountDisplay(1234);
-      expect(display).toContain('+');
-      // Exact number is rounded/hidden
-      expect(display).not.toBe('1234 saves');
+    it('returns empty string below all thresholds', () => {
+      expect(getTimeBasedPopularityLabel(1, 5)).toBe('');
     });
   });
 });

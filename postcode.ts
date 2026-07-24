@@ -7,6 +7,15 @@ import { DEMO_POSTCODES } from "./mock-data";
 const POSTCODES_IO_BASE = "https://api.postcodes.io";
 
 /**
+ * Normalise a UK postcode: uppercase, strip spaces, re-insert the single
+ * space before the 3-character incode ("bs15pb" -> "BS1 5PB").
+ */
+function normalizePostcode(pc: string): string {
+  const compact = pc.toUpperCase().replace(/\s+/g, "");
+  return compact.length > 3 ? `${compact.slice(0, -3)} ${compact.slice(-3)}` : compact;
+}
+
+/**
  * Postcode Lookup Router
  * 
  * Uses Postcodes.io (free, no API key required) to provide:
@@ -100,7 +109,7 @@ export const postcodeRouter = router({
       try {
         // In demo mode, validate against mock postcodes
         if (DEMO_MODE) {
-          const normalized = input.postcode.toUpperCase();
+          const normalized = normalizePostcode(input.postcode);
           const valid = normalized in DEMO_POSTCODES;
           return { valid };
         }
@@ -127,7 +136,7 @@ export const postcodeRouter = router({
     .query(async ({ input }) => {
       // In demo mode, return mock postcode data
       if (DEMO_MODE) {
-        const normalized = input.postcode.toUpperCase();
+        const normalized = normalizePostcode(input.postcode);
         const mockData = DEMO_POSTCODES[normalized as keyof typeof DEMO_POSTCODES];
 
         if (!mockData) {

@@ -182,6 +182,15 @@ export default function ImmersiveDiscoverCards({ properties, isLoading, onProper
   const imgUrl  = getPropertyImageUrl(p.id, p.type);
   const isNew   = !p.daysOnMarket || p.daysOnMarket < 14;
 
+  // Derive momentum from engagement signals when no timeline events present
+  const momentumTag = (() => {
+    if (p.timelineEvents && p.timelineEvents.length > 0) return null;
+    const score = (p.views ?? 0) * 0.4 + (p.saves ?? 0) * 3;
+    if (score > 80) return { label: '🔥 High interest', cls: 'bg-rose-500/90' } as const;
+    if (score > 35) return { label: '📈 Rising', cls: 'bg-orange-500/85' } as const;
+    return null;
+  })();
+
   // Exit transform
   const exitStyle: React.CSSProperties = exitDir
     ? {
@@ -199,7 +208,7 @@ export default function ImmersiveDiscoverCards({ properties, isLoading, onProper
 
   return (
     <div
-      className="relative w-full h-screen bg-slate-950 overflow-hidden touch-none"
+      className="relative w-full h-[calc(100vh-3.5rem)] md:max-w-[420px] md:mx-auto md:rounded-2xl md:border md:border-slate-800/60 md:shadow-2xl bg-slate-950 overflow-hidden touch-none"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
@@ -242,9 +251,14 @@ export default function ImmersiveDiscoverCards({ properties, isLoading, onProper
               New
             </span>
           )}
-          {p.timelineEvents && p.timelineEvents.length > 0 && (
-            <MomentumBadge timelineEvents={p.timelineEvents} size="sm" showTooltip={false} />
-          )}
+          {p.timelineEvents && p.timelineEvents.length > 0
+            ? <MomentumBadge timelineEvents={p.timelineEvents} size="sm" showTooltip={false} />
+            : momentumTag && (
+              <span className={`px-2.5 py-1 ${momentumTag.cls} backdrop-blur-sm text-white text-[11px] font-semibold rounded-full`}>
+                {momentumTag.label}
+              </span>
+            )
+          }
         </div>
 
         {/* ── TikTok right sidebar ──────────────────────── */}
@@ -334,6 +348,11 @@ export default function ImmersiveDiscoverCards({ properties, isLoading, onProper
             {!!p.daysOnMarket && (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/10 backdrop-blur-sm text-white text-[11px] rounded-full">
                 <Clock size={10} /> {p.daysOnMarket}d
+              </span>
+            )}
+            {!!p.views && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/10 backdrop-blur-sm text-white text-[11px] rounded-full">
+                👀 {p.views}
               </span>
             )}
           </div>

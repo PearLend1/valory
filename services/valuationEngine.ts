@@ -6,8 +6,8 @@
 
 import { searchEPCByPostcode, extractEPCSignals } from './epcClient';
 import { getAmenityCounts, extractAmenitySignals } from './osmOverpass';
-import { getComparableSales, calculateMedianPrice } from '../jobs/ppdImport';
-import { getPostcodeData } from '../jobs/onspdImport';
+import { getComparableSales, calculateMedianPrice } from '../ppdImport';
+import { getPostcodeData } from '../onspdImport';
 import { getCachedEPC, getCachedOverpass, cacheKeys, CACHE_TTL } from './cacheManager';
 
 export interface ValuationSignal {

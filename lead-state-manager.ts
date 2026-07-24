@@ -1,6 +1,6 @@
 import { eq, and } from 'drizzle-orm';
-import { vendorLeadStates, leadStateAuditLog, premiumEarlyLeadSignals } from '../drizzle/schema';
-import type { VendorLeadState, InsertVendorLeadState, LeadStateAuditLog, InsertLeadStateAuditLog } from '../drizzle/schema';
+import { vendorLeadStates, leadStateAuditLog, premiumEarlyLeadSignals } from './drizzle/schema';
+import type { VendorLeadState, InsertVendorLeadState, LeadStateAuditLog, InsertLeadStateAuditLog } from './drizzle/schema';
 
 export type LeadState = 'REGISTERED' | 'PROFILE_IN_PROGRESS' | 'READY_FOR_AGENT_MATCH' | 'PAUSED' | 'WITHDRAWN';
 

@@ -126,7 +126,8 @@ export function extractEPCSignals(cert: EPCCertificate): {
   return {
     energyEfficiency: ratingToEfficiency[cert.energyRating] || 'Unknown',
     estimatedAnnualCost: `£${Math.round(cert.energyRatingScore * 50)}`, // Rough estimate
-    improvementPotential: cert.energyRating >= 'D' ? 'Limited' : 'Significant',
+    // Ratings D-G (worse) have significant room for improvement; A-C are already efficient
+    improvementPotential: cert.energyRating >= 'D' ? 'Significant' : 'Limited',
     floorAreaSignal: `${Math.round(cert.floorArea)} m²`,
   };
 }

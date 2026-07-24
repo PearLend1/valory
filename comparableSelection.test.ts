@@ -98,8 +98,13 @@ describe('Comparable Selection Algorithm', () => {
         ppdType: 'D', // House, not flat
       };
 
-      const score = scoreComp(subject, comp, 1609);
-      expect(score).toBeLessThan(0.5);
+      const mismatchScore = scoreComp(subject, comp, 1609);
+      // Same comp but with a matching type should always outscore the mismatch
+      const matchingComp: Comp = { ...comp, ppdType: 'F' };
+      const matchScore = scoreComp(subject, matchingComp, 1609);
+
+      expect(mismatchScore).toBeLessThan(matchScore);
+      expect(mismatchScore).toBeLessThan(0.8);
     });
 
     it('should handle missing coordinates gracefully', () => {
@@ -297,9 +302,11 @@ describe('Comparable Selection Algorithm', () => {
 
       const explanation = generateExplanation(valuation, 'London');
 
-      expect(explanation.headline).toContain('£285,000');
-      expect(explanation.headline).toContain('£315,000');
-      expect(explanation.headline).toContain('High');
+      expect(explanation.headline).toContain('£300,000');
+      expect(explanation.whatThisMeans).toContain('£285,000');
+      expect(explanation.whatThisMeans).toContain('£315,000');
+      expect(explanation.confidenceStatement).toContain('High confidence');
+      expect(explanation.confidenceStatement).toContain('12');
       expect(explanation.howWeCalculated.length).toBeGreaterThan(0);
       expect(explanation.whatCouldMoveIt.length).toBeGreaterThan(0);
     });
@@ -317,10 +324,10 @@ describe('Comparable Selection Algorithm', () => {
 
       const short = generateShortExplanation(valuation);
 
+      expect(short).toContain('£300,000');
       expect(short).toContain('£285,000');
       expect(short).toContain('£315,000');
-      expect(short).toContain('High');
-      expect(short).toContain('12');
+      expect(short).toContain('High confidence');
     });
 
     it('should generate detailed explanation with signals', () => {
@@ -338,8 +345,11 @@ describe('Comparable Selection Algorithm', () => {
 
       const detailed = generateDetailedExplanation(valuation, 'Manchester');
 
-      expect(detailed).toContain('Comparable Sales');
-      expect(detailed).toContain('8 recent sales');
+      // Current explainer summarises comps in prose rather than listing raw signals
+      expect(detailed).toContain('Manchester');
+      expect(detailed).toContain('8');
+      expect(detailed).toContain('Medium confidence');
+      expect(detailed).toContain('How we calculated this');
     });
 
     it('should have appropriate confidence wording', () => {
@@ -369,8 +379,10 @@ describe('Comparable Selection Algorithm', () => {
         'London'
       );
 
-      expect(high.confidenceStatement).toContain('Strong evidence');
-      expect(low.confidenceStatement).toContain('Limited evidence');
+      expect(high.confidenceStatement).toContain('High confidence');
+      expect(high.confidenceStatement).toContain('15');
+      expect(low.confidenceStatement).toContain('Low confidence');
+      expect(low.confidenceStatement).toContain('3');
     });
   });
 

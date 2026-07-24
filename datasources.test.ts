@@ -6,8 +6,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { searchEPCByPostcode, extractEPCSignals } from './services/epcClient';
 import { getAmenityCounts, extractAmenitySignals } from './services/osmOverpass';
-import { calculateMedianPrice } from './jobs/ppdImport';
-import { getPostcodeData } from './jobs/onspdImport';
+import { calculateMedianPrice } from './ppdImport';
+import { getPostcodeData } from './onspdImport';
 import { cacheManager, cacheKeys, CACHE_TTL } from './services/cacheManager';
 import { generateValuation } from './services/valuationEngine';
 
@@ -181,11 +181,13 @@ describe('Data Source Integration Tests', () => {
   describe('Valuation Engine', () => {
     it('should generate valuation with signals', async () => {
       // Mock the external API calls
-      vi.mock('./services/epcClient', () => ({
+      vi.mock('./services/epcClient', async (importOriginal) => ({
+        ...(await importOriginal<typeof import('./services/epcClient')>()),
         searchEPCByPostcode: vi.fn().mockResolvedValue([]),
       }));
 
-      vi.mock('./services/osmOverpass', () => ({
+      vi.mock('./services/osmOverpass', async (importOriginal) => ({
+        ...(await importOriginal<typeof import('./services/osmOverpass')>()),
         getAmenityCounts: vi.fn().mockResolvedValue({
           latitude: 51.5007,
           longitude: -0.1246,
