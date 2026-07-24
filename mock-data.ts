@@ -82,6 +82,8 @@ export const DEMO_PROPERTIES = [
     address: '42 Baker Street, Westminster, London W1A 1AA',
     city: 'London',
     postcode: 'W1A 1AA',
+    // Demo walkthrough video (stock clip) — shows the video-first feed experience
+    videoUrl: 'https://videos.pexels.com/video-files/6873503/6873503-hd_1080_1920_25fps.mp4',
     saves: 24,
     views: 342,
     daysOnMarket: 18,

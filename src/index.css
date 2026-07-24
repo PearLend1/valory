@@ -309,3 +309,42 @@
 .animate-glowPulse {
   animation: glowPulse 2s ease-in-out infinite;
 }
+
+/* ── Video feed (TikTok-style) ─────────────────────────────── */
+
+/* Hide scrollbar on the snap feed while keeping it scrollable */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ken Burns motion for photo-only listings — two directions so
+   consecutive cards feel distinct */
+@keyframes kenburns-a {
+  0%   { transform: scale(1.02) translate(0, 0); }
+  100% { transform: scale(1.14) translate(-2.5%, -2%); }
+}
+@keyframes kenburns-b {
+  0%   { transform: scale(1.14) translate(2%, -2.5%); }
+  100% { transform: scale(1.02) translate(0, 0); }
+}
+.animate-kenburns-a {
+  animation: kenburns-a 14s ease-in-out infinite alternate;
+}
+.animate-kenburns-b {
+  animation: kenburns-b 14s ease-in-out infinite alternate;
+}
+
+/* Double-tap heart pulse */
+@keyframes heart-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  25%  { transform: scale(1.15); opacity: 1; }
+  60%  { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.05); opacity: 0; }
+}
+.animate-heart-pop {
+  animation: heart-pop 0.7s ease-out forwards;
+}

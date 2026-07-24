@@ -26,12 +26,16 @@
 
 ## Phase 1 — Infrastructure (Week 1–2)
 
-- [ ] Railway project: web service (Express + Vite build) + Postgres
-- [ ] Run Drizzle migrations 0000–0008 against production DB
+- [x] Railway project "observant-enchantment": valory web service (branch valorevest-fund-ui, auto-deploy) + **MySQL** (not Postgres — app uses drizzle mysql dialect) *(2026-07-07)*
+- [x] Live at https://valory-production-110f.up.railway.app (port 3000, PORT var pinned) *(2026-07-07)*
+- [x] Fixed prod-only crash: esbuild ESM bundle needed createRequire banner for dotenv/CJS (commit 01a912f)
+- [x] Env vars set: DATABASE_URL (ref to MySQL), NODE_ENV, VITE_AUTH0_DOMAIN, VITE_AUTH0_CLIENT_ID
+- [ ] Oliver: add secrets as Railway variables — `STREET_DATA_API_KEY` (copy from local .env) and `JWT_SECRET` (long random string)
+- [ ] Run Drizzle migrations 0000–0008 against Railway MySQL (DB currently empty — non-landing pages will fail until done)
 - [ ] Import reference data: ONSPD postcodes (`onspdImport.ts`), Land Registry PPD sold prices (`ppdImport.ts`)
-- [ ] Environment config: `DATABASE_URL`, Street Data API key, session secret
-- [ ] Custom domain + TLS
+- [ ] Custom domain: point **valoryhomes.com** at Railway (add custom domain in service settings + CNAME at registrar); then add to Auth0 allowed URLs
 - [ ] Error monitoring (Sentry) + uptime check
+- [ ] Upgrade Railway trial → Hobby plan before beta traffic
 
 ## Phase 2 — Real data & auth (Week 2–3)
 

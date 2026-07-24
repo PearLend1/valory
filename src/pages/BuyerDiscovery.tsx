@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { DiscoveryFeed, type SwipeAction } from '@/components/SwipePropertyCard';
-import ImmersiveDiscoverCards from '@/components/ImmersiveDiscoverCards';
+import VideoFeed from '@/components/VideoFeed';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useLocation } from 'wouter';
@@ -112,10 +112,18 @@ export default function BuyerDiscovery() {
           </div>
         </nav>
         <div className="pt-14">
-          <ImmersiveDiscoverCards
+          <VideoFeed
             properties={properties || []}
             isLoading={isLoading}
             onPropertyDetail={handleViewDetail}
+            onSave={handleFavourite}
+            onPass={handlePass}
+            onEnquire={(id) => {
+              toast.success('Enquiry started', {
+                description: 'Opening property details so you can message the agent',
+              });
+              navigate(`/property/${id}`);
+            }}
           />
         </div>
       </>
