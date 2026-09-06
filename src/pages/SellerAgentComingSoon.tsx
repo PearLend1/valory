@@ -41,10 +41,10 @@ export default function SellerAgentComingSoon() {
 
           <button
             type="button"
-            onClick={() => navigate('/beta-signup')}
+            onClick={() => navigate('/')}
             className="mt-6 h-12 w-full rounded-xl bg-amber-500 text-sm font-bold text-slate-950 transition-colors hover:bg-amber-400"
           >
-            Join the Valory beta
+            Return to Valory
           </button>
         </section>
       </div>
