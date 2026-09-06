@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx _core/index.ts",
-    "build": "vite build && esbuild _core/index.ts --bundle --platform=node --outdir=dist --format=esm --external:better-sqlite3 --external:mysql2 --external:vite --external:@vitejs/plugin-react",
+    "build": "vite build && esbuild _core/index.ts --bundle --platform=node --outdir=dist --format=esm --packages=external",
     "start": "NODE_ENV=production node dist/index.js"
   },
   "dependencies": {
