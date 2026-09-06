@@ -22,6 +22,8 @@ export function getSessionCookieOptions(
     // The OAuth callback is a top-level GET, so Lax remains compatible while
     // materially reducing cross-site request exposure versus SameSite=None.
     sameSite: "lax",
-    secure: isSecureRequest(req),
+    // Fail safe if a proxy omits x-forwarded-proto: production auth cookies
+    // must never be sent over plain HTTP.
+    secure: process.env.NODE_ENV === "production" || isSecureRequest(req),
   };
 }
