@@ -32,3 +32,25 @@ jobs:
 
       - name: Build application
         run: npm run build
+
+      - name: Smoke test production server
+        env:
+          NODE_ENV: production
+          PORT: 4173
+          JWT_SECRET: ci-only-random-session-secret-which-is-longer-than-32-characters
+          ENABLE_DEMO_MODE: "false"
+          ENABLE_DEMO_ADMIN: "false"
+          ENABLE_PUBLIC_SIGNUPS: "false"
+          ALLOW_SYNTHETIC_VALUATIONS: "false"
+        run: |
+          node dist/index.js > /tmp/valory-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/sell/valuation > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/valory-server.log
+          exit 1
