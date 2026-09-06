@@ -6,7 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
-import { serveStatic, setupVite } from "./vite";
+import { serveStatic } from "./static";
 import { initDemoMode } from "../demo-mode";
 import { externalDataRegistry, StreetDataProvider } from "../external-data-provider";
 
@@ -107,7 +107,6 @@ function rateLimitApi(req: Request, res: Response, next: NextFunction) {
     return;
   }
 
-  // Bound memory use if the service is hit from many unique addresses.
   if (rateBuckets.size > 10_000) {
     for (const [bucketKey, value] of rateBuckets) {
       if (value.resetAt <= now) rateBuckets.delete(bucketKey);
@@ -133,13 +132,10 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Manus and most production hosts terminate TLS at one trusted proxy.
   app.set("trust proxy", 1);
   app.disable("x-powered-by");
   app.use(setSecurityHeaders);
 
-  // No current route needs a 50 MB JSON body. Keeping this small reduces
-  // denial-of-service exposure; future media uploads should use object storage.
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ limit: "1mb", extended: true }));
 
@@ -191,6 +187,10 @@ async function startServer() {
   );
 
   if (process.env.NODE_ENV === "development") {
+    // Keep Vite and its native development dependencies out of the production
+    // server bundle. The non-literal import is resolved by tsx in development.
+    const viteModulePath = "./vite";
+    const { setupVite } = await import(viteModulePath);
     await setupVite(app, server);
   } else {
     serveStatic(app);
