@@ -1,15 +1,15 @@
 /**
  * Production-safe valuation candidate selection.
  *
- * The original comparableSelection module returns synthetic demo comparables
+ * The legacy comparableSelection module returns synthetic demo comparables
  * immediately when DATABASE_URL is absent. That is useful locally, but it also
- * prevents a configured Street Data provider from ever being called on
- * database-free deployments such as the Manus beta.
+ * prevents a configured Street Data provider from ever being called on a
+ * database-free deployment such as the Manus beta.
  *
- * This wrapper makes the fallback order explicit:
- *   1. Stored Land Registry comparables, when a database is available.
- *   2. Street Data comparables, when a full covered postcode and API key exist.
- *   3. Synthetic comparables only when explicitly enabled for demo/development.
+ * This wrapper makes the production fallback order explicit:
+ *   1. Street Data comparables for a complete covered postcode.
+ *   2. Stored Land Registry comparables when a database is available.
+ *   3. Synthetic comparables only when explicitly enabled for a labelled demo.
  */
 
 import { getPool } from '../db';
@@ -38,9 +38,10 @@ export type ValuationDataSource =
 
 export type SourcedComp = Comp & { dataSource?: ValuationDataSource };
 
+const FULL_UK_POSTCODE = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
+
 function syntheticValuationsAllowed(): boolean {
-  if (process.env.ALLOW_SYNTHETIC_VALUATIONS === 'true') return true;
-  return process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test';
+  return process.env.ALLOW_SYNTHETIC_VALUATIONS === 'true';
 }
 
 function propertyTypeForStreet(subject: Subject): string {
@@ -54,7 +55,13 @@ function mapStreetComparables(subject: Subject, comparables: Comparable[]): Sour
     subject.typeBucket === 'flat' ? 'F' : subject.typeBucket === 'house' ? 'S' : 'O';
 
   return comparables
-    .filter(comp => Number.isFinite(comp.price) && comp.price > 0 && !Number.isNaN(comp.soldDate.getTime()))
+    .filter(
+      comp =>
+        Number.isFinite(comp.price) &&
+        comp.price > 0 &&
+        comp.soldDate instanceof Date &&
+        !Number.isNaN(comp.soldDate.getTime())
+    )
     .map((comp, index) => ({
       id: -(index + 1),
       price: Math.round(comp.price),
@@ -67,11 +74,20 @@ function mapStreetComparables(subject: Subject, comparables: Comparable[]): Sour
 }
 
 async function getStreetDataComparables(subject: Subject): Promise<SourcedComp[]> {
-  const postcode = subject.postcode?.trim();
+  const postcode = subject.postcode?.trim().toUpperCase();
 
   // Street Data's postcode endpoint requires a complete postcode. Valory's
   // controlled beta is intentionally limited by coverage-config.ts.
-  if (!postcode || postcode.length < 5 || !isWithinCoverage(postcode)) return [];
+  if (!postcode || !FULL_UK_POSTCODE.test(postcode) || !isWithinCoverage(postcode)) {
+    return [];
+  }
+
+  // No provider means the deployment secret was not supplied. This test avoids
+  // treating a missing key as a successful but empty lookup.
+  if (externalDataRegistry.getProviders().length === 0) {
+    console.warn('[LiveComparableSelection] No external data provider is registered');
+    return [];
+  }
 
   try {
     const comparables = await externalDataRegistry.getComparables(
@@ -91,16 +107,23 @@ async function getStreetDataComparables(subject: Subject): Promise<SourcedComp[]
  * Build a real-data candidate set wherever possible.
  *
  * In production this returns an empty array rather than invented prices when
- * neither the database nor Street Data can provide evidence. The calling
- * router already converts that into a user-friendly "valuation unavailable"
- * response.
+ * neither Street Data nor the database can provide evidence. The calling
+ * router converts that into a user-friendly "valuation unavailable" response.
  */
 export async function buildCandidateSet(
   subject: Subject,
   radiusM: number = 1609
 ): Promise<Comp[]> {
-  let hasDatabase = false;
+  // Critical fix: Street Data is attempted before any database-free demo path.
+  const streetComparables = await getStreetDataComparables(subject);
+  if (streetComparables.length > 0) {
+    console.info(
+      `[LiveComparableSelection] Street Data supplied ${streetComparables.length} real comparables`
+    );
+    return streetComparables;
+  }
 
+  let hasDatabase = false;
   try {
     hasDatabase = Boolean(await getPool());
   } catch (error) {
@@ -125,15 +148,6 @@ export async function buildCandidateSet(
     } catch (error) {
       console.warn('[LiveComparableSelection] Stored comparable lookup failed:', error);
     }
-  }
-
-  // Critical fix: try Street Data before any database-free demo fallback.
-  const streetComparables = await getStreetDataComparables(subject);
-  if (streetComparables.length > 0) {
-    console.info(
-      `[LiveComparableSelection] Street Data supplied ${streetComparables.length} real comparables`
-    );
-    return streetComparables;
   }
 
   if (syntheticValuationsAllowed()) {
