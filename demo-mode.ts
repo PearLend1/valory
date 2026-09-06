@@ -1,7 +1,7 @@
 /**
  * Demo Mode Configuration
  * Provides helper functions for running the app without a database.
- * Demo identities must never be enabled in a production deployment.
+ * Demo identities must never be enabled accidentally or in production.
  */
 
 import type { Request } from 'express';
@@ -11,9 +11,8 @@ import type { User } from './schema';
 const isProduction = process.env.NODE_ENV === 'production';
 const explicitlyEnabled = process.env.ENABLE_DEMO_MODE === 'true';
 
-// Preserve convenient local development while failing closed in production.
-export const DEMO_MODE =
-  !isProduction && (explicitlyEnabled || !process.env.DATABASE_URL);
+// Fail closed: demo identities require an explicit non-production flag.
+export const DEMO_MODE = !isProduction && explicitlyEnabled;
 
 /**
  * Get a local demo user based on the ?role query parameter.
@@ -43,11 +42,20 @@ export function getDemoUser(req?: Request): User {
 }
 
 /**
- * Log demo mode status.
+ * Validate and log demo/security configuration.
  */
 export function initDemoMode(): void {
+  if (isProduction) {
+    const sessionSecret = process.env.JWT_SECRET ?? '';
+    if (sessionSecret.length < 32) {
+      throw new Error(
+        'JWT_SECRET must be a random production secret of at least 32 characters'
+      );
+    }
+  }
+
   if (DEMO_MODE) {
-    console.warn('[Demo Mode] Enabled for local/non-production use');
+    console.warn('[Demo Mode] Explicitly enabled for non-production use');
     if (process.env.ENABLE_DEMO_ADMIN === 'true') {
       console.warn('[Demo Mode] Admin impersonation is enabled');
     }
