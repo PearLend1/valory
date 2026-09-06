@@ -1,8 +1,8 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
-import { buyerProcedure, vendorProcedure, agentProcedure, tier1AgentProcedure, tier2AgentProcedure, adminProcedure } from "./_core/rbac";
+import { publicProcedure, router } from "./_core/trpc";
+import { vendorProcedure, agentProcedure, tier1AgentProcedure } from "./_core/rbac";
 import * as validation from "./_core/validation";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
@@ -61,21 +61,18 @@ export const appRouter = router({
       }),
   }),
 
-  // ============ VALUATIONS (VENDOR) ============
+  // ============ LEGACY VALUATION ROUTE (VENDOR) ============
   valuations: router({
     request: vendorProcedure
       .input(validation.ValuationRequestSchema)
-      .mutation(async ({ input, ctx }) => {
-        // Simulate AI-powered valuation
-        const estimatedPriceLow = Math.floor(input.price * 0.9);
-        const estimatedPriceHigh = Math.ceil(input.price * 1.1);
-
-        return {
-          estimatedPriceLow,
-          estimatedPriceHigh,
-          confidence: "medium",
-          reasoning: "Based on comparable properties in the area.",
-        };
+      .mutation(() => {
+        // This route previously returned a fabricated +/-10% result. Keep it
+        // closed so no client can mistake placeholder arithmetic for a live
+        // data-backed valuation. The canonical route is valuation.estimate.
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Use the verified valuation flow.",
+        });
       }),
   }),
 
@@ -83,18 +80,13 @@ export const appRouter = router({
   subscriptions: router({
     subscribe: agentProcedure
       .input(validation.AgentSubscriptionSchema)
-      .mutation(async ({ input, ctx }) => {
-        // Verify subscription tier is valid
-        if (!["tier1", "tier2"].includes(input.tier)) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid subscription tier" });
-        }
-
-        // In a real system, this would process payment and create subscription
-        return {
-          success: true,
-          tier: input.tier,
-          renewalDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week
-        };
+      .mutation(() => {
+        // Never claim that payment or a recurring subscription exists until a
+        // real payment provider, terms and cancellation flow are connected.
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Paid subscriptions are not yet enabled.",
+        });
       }),
 
     getActive: agentProcedure
@@ -111,7 +103,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         try {
           if (DEMO_MODE) {
-            console.log('[Demo Mode] Agent registration:', input);
+            console.info('[Demo Mode] Agent registration received');
             return { success: true };
           }
           const database = await db.getDb();
@@ -132,6 +124,7 @@ export const appRouter = router({
           });
           return { success: true };
         } catch (error) {
+          console.error('[AgentRegistration] Failed to store registration');
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create agent registration' });
         }
       }),
@@ -144,18 +137,24 @@ export const appRouter = router({
         name:      z.string().min(2).max(255),
         email:     z.string().email(),
         phone:     z.string().min(9).max(20),
-        postcode:  z.string().min(3).max(8),
+        postcode:  z.string().min(5).max(8),
         estimate:  z.number().positive().optional(),
-        type:      z.string().optional(),
-        beds:      z.number().int().optional(),
+        type:      z.string().max(50).optional(),
+        beds:      z.number().int().min(0).max(10).optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input: _input }) => {
         if (DEMO_MODE) {
-          console.log('[Demo Mode] Seller lead:', input);
+          console.info('[Demo Mode] Seller lead received');
           return { success: true, agents: DEMO_MATCHED_AGENTS };
         }
-        // TODO: persist lead + run real agent matching
-        return { success: true, agents: DEMO_MATCHED_AGENTS };
+
+        // The old production branch silently discarded the seller's details
+        // and returned demo agents. Fail closed until consent, persistence,
+        // matching, retention and agent-sharing rules are implemented.
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'Seller introductions are not yet enabled.',
+        });
       }),
   }),
 
@@ -165,9 +164,8 @@ export const appRouter = router({
       .input(validation.BetaSignupSchema)
       .mutation(async ({ input }) => {
         try {
-          // In demo mode, just return success without DB insert
           if (DEMO_MODE) {
-            console.log('[Demo Mode] Beta signup:', input);
+            console.info('[Demo Mode] Beta signup received');
             return { success: true };
           }
 
@@ -182,6 +180,7 @@ export const appRouter = router({
           });
           return { success: true };
         } catch (error) {
+          console.error('[BetaSignup] Failed to store signup');
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create beta signup' });
         }
       }),
@@ -191,8 +190,7 @@ export const appRouter = router({
   launches: router({
     upload: tier1AgentProcedure
       .input(validation.LaunchVideoSchema)
-      .mutation(async ({ input, ctx }) => {
-        // Validate video duration and format
+      .mutation(({ input }) => {
         if (!["30s", "90s"].includes(input.durationType)) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Duration must be 30s or 90s" });
         }
@@ -201,12 +199,12 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid template type" });
         }
 
-        // In a real system, validate MP4 file and store in S3
-        return {
-          success: true,
-          launchId: Math.floor(Math.random() * 10000),
-          message: "Launch video uploaded successfully",
-        };
+        // Do not return a fake upload ID until object storage, malware/content
+        // validation and lifecycle/deletion controls are implemented.
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Video uploads are not yet enabled.",
+        });
       }),
   }),
 });
