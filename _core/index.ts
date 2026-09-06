@@ -8,7 +8,8 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic } from "./static";
 import { initDemoMode } from "../demo-mode";
-import { externalDataRegistry, StreetDataProvider } from "../external-data-provider";
+import { externalDataRegistry } from "../external-data-provider";
+import { ProductionStreetDataProvider } from "../street-data-provider";
 
 const API_RATE_WINDOW_MS = 60_000;
 const API_RATE_LIMIT = 60;
@@ -121,7 +122,9 @@ async function startServer() {
 
   const streetDataKey = process.env.STREET_DATA_API_KEY;
   if (streetDataKey) {
-    externalDataRegistry.register(new StreetDataProvider(streetDataKey));
+    externalDataRegistry.register(
+      new ProductionStreetDataProvider(streetDataKey)
+    );
     console.log("[Valory] Street Data API provider registered");
   } else {
     console.warn(
