@@ -17,6 +17,17 @@ import { DEMO_MODE } from './demo-mode';
 import { DEMO_MATCHED_AGENTS } from './mock-data';
 import { z } from 'zod';
 
+const PUBLIC_SIGNUPS_ENABLED = process.env.ENABLE_PUBLIC_SIGNUPS === 'true';
+
+function assertPublicSignupsEnabled() {
+  if (!PUBLIC_SIGNUPS_ENABLED) {
+    throw new TRPCError({
+      code: 'PRECONDITION_FAILED',
+      message: 'Public signups are not yet enabled.',
+    });
+  }
+}
+
 export const appRouter = router({
   system: systemRouter,
   valuation: valuationRouter,
@@ -101,14 +112,22 @@ export const appRouter = router({
     create: publicProcedure
       .input(validation.AgentRegistrationSchema)
       .mutation(async ({ input }) => {
+        if (DEMO_MODE) {
+          console.info('[Demo Mode] Agent registration received');
+          return { success: true };
+        }
+
+        // This flag must stay false until the real privacy notice, retention
+        // schedule, processor terms and just-in-time form notice are live.
+        assertPublicSignupsEnabled();
+
         try {
-          if (DEMO_MODE) {
-            console.info('[Demo Mode] Agent registration received');
-            return { success: true };
-          }
           const database = await db.getDb();
           if (!database) {
-            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Database not available',
+            });
           }
           await database.insert(agentRegistrations).values({
             agencyName:     input.agencyName,
@@ -124,8 +143,12 @@ export const appRouter = router({
           });
           return { success: true };
         } catch (error) {
+          if (error instanceof TRPCError) throw error;
           console.error('[AgentRegistration] Failed to store registration');
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create agent registration' });
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create agent registration',
+          });
         }
       }),
   }),
@@ -163,15 +186,20 @@ export const appRouter = router({
     create: publicProcedure
       .input(validation.BetaSignupSchema)
       .mutation(async ({ input }) => {
-        try {
-          if (DEMO_MODE) {
-            console.info('[Demo Mode] Beta signup received');
-            return { success: true };
-          }
+        if (DEMO_MODE) {
+          console.info('[Demo Mode] Beta signup received');
+          return { success: true };
+        }
 
+        assertPublicSignupsEnabled();
+
+        try {
           const database = await db.getDb();
           if (!database) {
-            throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Database not available',
+            });
           }
           await database.insert(betaSignups).values({
             name: input.name,
@@ -180,8 +208,12 @@ export const appRouter = router({
           });
           return { success: true };
         } catch (error) {
+          if (error instanceof TRPCError) throw error;
           console.error('[BetaSignup] Failed to store signup');
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create beta signup' });
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create beta signup',
+          });
         }
       }),
   }),
