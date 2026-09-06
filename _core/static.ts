@@ -28,8 +28,9 @@ export function serveStatic(app: Express) {
     })
   );
 
-  // Single-page application fallback.
-  app.use("*", (_req, res) => {
+  // Path-to-regexp handling changed in Express 5. A pathless final middleware
+  // is the portable SPA fallback and still lets the earlier API routes win.
+  app.use((_req, res) => {
     res.setHeader("Cache-Control", "no-cache");
     res.sendFile(path.resolve(distPath, "index.html"));
   });
