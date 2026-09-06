@@ -9,8 +9,9 @@ import { publicProcedure, router } from '../_core/trpc';
 import {
   buildCandidateSet,
   buildValuation,
+  getValuationDataSource,
   type Subject,
-} from '../services/comparableSelection';
+} from '../services/liveComparableSelection';
 import {
   generateExplanation,
   generateDetailedExplanation,
@@ -48,17 +49,17 @@ export const valuationEnhancedRouter = router({
           postcodeOutcode: input.postcodeOutcode,
         };
 
-        // Build candidate set with intelligent fallback
+        // Build candidate set with real-data-first fallback.
         const comps = await buildCandidateSet(subject);
 
         if (comps.length === 0) {
           return {
             success: false,
-            error: 'No comparable sales found in this area. Try a different location or contact an agent.',
+            error: 'No verified comparable sales found in this area. Please try a full postcode or contact an agent.',
           };
         }
 
-        // Build valuation from comps
+        const dataSource = getValuationDataSource(comps);
         const valuation = buildValuation(subject, comps);
 
         return {
@@ -72,6 +73,7 @@ export const valuationEnhancedRouter = router({
             medianPrice: valuation.medianPrice,
             ppsqm: valuation.ppsqm,
             signals: valuation.signals,
+            dataSource,
           },
         };
       } catch (error) {
@@ -105,16 +107,21 @@ export const valuationEnhancedRouter = router({
         if (comps.length === 0) {
           return {
             success: false,
-            error: 'No comparable sales found. Please try a different location.',
+            error: 'No verified comparable sales found. Please enter a full postcode or request a local agent review.',
           };
         }
 
+        const dataSource = getValuationDataSource(comps);
         const valuation = buildValuation(subject, comps);
         const area = input.area || input.postcodeOutcode || 'your area';
 
         const explanation = generateExplanation(valuation, area);
         const detailed = generateDetailedExplanation(valuation, area);
         const short = generateShortExplanation(valuation);
+        const importantNote =
+          dataSource === 'synthetic'
+            ? 'Illustrative demo estimate only. It is not based on verified live comparable sales and must not be used for a marketing or lending decision.'
+            : explanation.importantNote;
 
         return {
           success: true,
@@ -126,13 +133,14 @@ export const valuationEnhancedRouter = router({
               confidence: valuation.confidence,
               compsUsed: valuation.compsUsed,
             },
+            dataSource,
             explanation: {
               headline: explanation.headline,
               confidenceStatement: explanation.confidenceStatement,
               howWeCalculated: explanation.howWeCalculated,
               whatThisMeans: explanation.whatThisMeans,
               whatCouldMoveIt: explanation.whatCouldMoveIt,
-              importantNote: explanation.importantNote,
+              importantNote,
               nextSteps: explanation.nextSteps,
             },
             formatted: {
@@ -172,10 +180,11 @@ export const valuationEnhancedRouter = router({
         if (comps.length === 0) {
           return {
             success: false,
-            error: 'No comparable sales found.',
+            error: 'No verified comparable sales found.',
           };
         }
 
+        const dataSource = getValuationDataSource(comps);
         const valuation = buildValuation(subject, comps);
         const area = input.area || input.postcodeOutcode || 'your area';
         const emailText = generateEmailExplanation(valuation, area);
@@ -185,6 +194,7 @@ export const valuationEnhancedRouter = router({
           data: {
             email: emailText,
             subject: `Your Valory Valuation: £${valuation.lowBand.toLocaleString()} – £${valuation.highBand.toLocaleString()}`,
+            dataSource,
           },
         };
       } catch (error) {
@@ -218,10 +228,11 @@ export const valuationEnhancedRouter = router({
         if (comps.length === 0) {
           return {
             success: false,
-            error: 'No comparable sales found.',
+            error: 'No verified comparable sales found.',
           };
         }
 
+        const dataSource = getValuationDataSource(comps);
         const valuation = buildValuation(subject, comps);
 
         return {
@@ -238,6 +249,7 @@ export const valuationEnhancedRouter = router({
             count: valuation.compsUsed,
             medianPrice: valuation.medianPrice,
             ppsqm: valuation.ppsqm,
+            dataSource,
           },
         };
       } catch (error) {
