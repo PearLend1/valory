@@ -11,6 +11,7 @@ import {
   buildValuation,
   getValuationDataSource,
   type Subject,
+  type ValuationDataSource,
 } from '../services/liveComparableSelection';
 import {
   generateExplanation,
@@ -29,6 +30,21 @@ const valuationInputSchema = z.object({
   postcodeOutcode: z.string().min(2).max(10).optional(),
   area: z.string().min(2).max(100).optional(),
 });
+
+function describeDataSource(dataSource: ValuationDataSource): string {
+  switch (dataSource) {
+    case 'street-data':
+      return 'Evidence source: Street Data property records and HM Land Registry completed-sale transactions.';
+    case 'blended':
+      return 'Evidence source: Street Data plus Valory’s stored completed-sale records.';
+    case 'database':
+      return 'Evidence source: Valory’s stored HM Land Registry completed-sale records.';
+    case 'synthetic':
+      return 'Evidence source: illustrative synthetic demo data.';
+    default:
+      return 'Evidence source: unavailable.';
+  }
+}
 
 export const valuationEnhancedRouter = router({
   /**
@@ -49,7 +65,6 @@ export const valuationEnhancedRouter = router({
           postcodeOutcode: input.postcodeOutcode,
         };
 
-        // Build candidate set with real-data-first fallback.
         const comps = await buildCandidateSet(subject);
 
         if (comps.length === 0) {
@@ -60,6 +75,7 @@ export const valuationEnhancedRouter = router({
         }
 
         const dataSource = getValuationDataSource(comps);
+        const evidenceRetrievedAt = new Date().toISOString();
         const valuation = buildValuation(subject, comps);
 
         return {
@@ -74,6 +90,7 @@ export const valuationEnhancedRouter = router({
             ppsqm: valuation.ppsqm,
             signals: valuation.signals,
             dataSource,
+            evidenceRetrievedAt,
           },
         };
       } catch (error) {
@@ -112,6 +129,8 @@ export const valuationEnhancedRouter = router({
         }
 
         const dataSource = getValuationDataSource(comps);
+        const evidenceRetrievedAt = new Date().toISOString();
+        const sourceDescription = describeDataSource(dataSource);
         const valuation = buildValuation(subject, comps);
         const area = input.area || input.postcodeOutcode || 'your area';
 
@@ -134,17 +153,20 @@ export const valuationEnhancedRouter = router({
               compsUsed: valuation.compsUsed,
             },
             dataSource,
+            evidenceRetrievedAt,
             explanation: {
               headline: explanation.headline,
               confidenceStatement: explanation.confidenceStatement,
-              howWeCalculated: explanation.howWeCalculated,
+              // The result page already renders this field, so the visitor can
+              // see whether Street Data was actually used without opening devtools.
+              howWeCalculated: `${sourceDescription} ${explanation.howWeCalculated}`,
               whatThisMeans: explanation.whatThisMeans,
               whatCouldMoveIt: explanation.whatCouldMoveIt,
               importantNote,
               nextSteps: explanation.nextSteps,
             },
             formatted: {
-              detailed,
+              detailed: `${sourceDescription}\n\n${detailed}`,
               short,
             },
           },
@@ -185,6 +207,8 @@ export const valuationEnhancedRouter = router({
         }
 
         const dataSource = getValuationDataSource(comps);
+        const evidenceRetrievedAt = new Date().toISOString();
+        const sourceDescription = describeDataSource(dataSource);
         const valuation = buildValuation(subject, comps);
         const area = input.area || input.postcodeOutcode || 'your area';
         const emailText = generateEmailExplanation(valuation, area);
@@ -192,9 +216,10 @@ export const valuationEnhancedRouter = router({
         return {
           success: true,
           data: {
-            email: emailText,
+            email: `${sourceDescription}\n\n${emailText}`,
             subject: `Your Valory Valuation: £${valuation.lowBand.toLocaleString()} – £${valuation.highBand.toLocaleString()}`,
             dataSource,
+            evidenceRetrievedAt,
           },
         };
       } catch (error) {
@@ -233,6 +258,7 @@ export const valuationEnhancedRouter = router({
         }
 
         const dataSource = getValuationDataSource(comps);
+        const evidenceRetrievedAt = new Date().toISOString();
         const valuation = buildValuation(subject, comps);
 
         return {
@@ -250,6 +276,7 @@ export const valuationEnhancedRouter = router({
             medianPrice: valuation.medianPrice,
             ppsqm: valuation.ppsqm,
             dataSource,
+            evidenceRetrievedAt,
           },
         };
       } catch (error) {
