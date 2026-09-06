@@ -119,7 +119,7 @@ export class ProductionStreetDataProvider
 
     try {
       const params = new URLSearchParams({
-        postcode: 'M111JU',
+        postcode: 'M11JU',
         'fields[property]': 'address',
         results: '1',
         dry_run: 'true',
@@ -241,44 +241,49 @@ export class ProductionStreetDataProvider
         if (!this.propertyTypeMatches(apiPropertyType, propertyType)) continue;
 
         const address = this.formatAddress(property);
-        const transactions = Array.isArray(attrs.transactions)
-          ? [...attrs.transactions].sort((a, b) =>
-              String(b.date ?? '').localeCompare(String(a.date ?? ''))
-            )
-          : [];
+        const latestTransaction = Array.isArray(attrs.transactions)
+          ? [...attrs.transactions]
+              .sort((a, b) =>
+                String(b.date ?? '').localeCompare(String(a.date ?? ''))
+              )
+              .find(transaction => {
+                const soldDate = transaction.date
+                  ? new Date(transaction.date)
+                  : null;
+                return Boolean(
+                  transaction.price &&
+                    transaction.price > 0 &&
+                    soldDate &&
+                    !Number.isNaN(soldDate.getTime())
+                );
+              })
+          : undefined;
 
-        for (const transaction of transactions.slice(0, 3)) {
-          const soldDate = transaction.date ? new Date(transaction.date) : null;
-          if (
-            !transaction.price ||
-            transaction.price <= 0 ||
-            !soldDate ||
-            Number.isNaN(soldDate.getTime())
-          ) {
-            continue;
-          }
+        if (!latestTransaction?.date || !latestTransaction.price) continue;
+        const soldDate = new Date(latestTransaction.date);
 
-          comparables.push({
-            id:
-              transaction.transaction_id ??
-              `${property.id ?? address}-${transaction.date}`,
-            address,
-            price: Math.round(transaction.price),
-            soldDate,
-            beds: propertyBeds,
-            baths: propertyBaths,
-            sqft: attrs.internal_area_square_metres
-              ? Math.round(attrs.internal_area_square_metres * 10.7639)
-              : undefined,
-            source: 'Street Data / HM Land Registry',
-            similarity: this.calculateSimilarity(
-              beds,
-              propertyBeds,
-              propertyType,
-              apiPropertyType
-            ),
-          });
-        }
+        // One latest sale per property prevents a repeatedly sold address from
+        // receiving disproportionate weight in the postcode valuation.
+        comparables.push({
+          id:
+            latestTransaction.transaction_id ??
+            `${property.id ?? address}-${latestTransaction.date}`,
+          address,
+          price: Math.round(latestTransaction.price),
+          soldDate,
+          beds: propertyBeds,
+          baths: propertyBaths,
+          sqft: attrs.internal_area_square_metres
+            ? Math.round(attrs.internal_area_square_metres * 10.7639)
+            : undefined,
+          source: 'Street Data / HM Land Registry',
+          similarity: this.calculateSimilarity(
+            beds,
+            propertyBeds,
+            propertyType,
+            apiPropertyType
+          ),
+        });
       }
 
       return comparables
