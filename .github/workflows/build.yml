@@ -1,4 +1,4 @@
-name: Build
+name: Build and security check
 
 on:
   pull_request:
@@ -25,6 +25,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Build application
         run: npm run build
