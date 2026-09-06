@@ -13,7 +13,12 @@ import { ProductionStreetDataProvider } from "../street-data-provider";
 
 const API_RATE_WINDOW_MS = 60_000;
 const API_RATE_LIMIT = 60;
-const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+const VALUATION_RATE_WINDOW_MS = 15 * 60_000;
+const VALUATION_RATE_LIMIT = 10;
+
+type RateBucket = { count: number; resetAt: number };
+const rateBuckets = new Map<string, RateBucket>();
+const valuationRateBuckets = new Map<string, RateBucket>();
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -86,17 +91,75 @@ function setSecurityHeaders(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-function rateLimitApi(req: Request, res: Response, next: NextFunction) {
-  const now = Date.now();
-  const key = req.ip || req.socket.remoteAddress || "unknown";
-  let bucket = rateBuckets.get(key);
+function clientKey(req: Request): string {
+  return req.ip || req.socket.remoteAddress || "unknown";
+}
 
+function updateRateBucket(
+  buckets: Map<string, RateBucket>,
+  key: string,
+  windowMs: number,
+  now: number
+): RateBucket {
+  let bucket = buckets.get(key);
   if (!bucket || bucket.resetAt <= now) {
-    bucket = { count: 0, resetAt: now + API_RATE_WINDOW_MS };
-    rateBuckets.set(key, bucket);
+    bucket = { count: 0, resetAt: now + windowMs };
+    buckets.set(key, bucket);
+  }
+  bucket.count += 1;
+  return bucket;
+}
+
+function pruneExpiredBuckets(buckets: Map<string, RateBucket>, now: number) {
+  if (buckets.size <= 10_000) return;
+  for (const [key, bucket] of buckets) {
+    if (bucket.resetAt <= now) buckets.delete(key);
+  }
+}
+
+function rateLimitValuations(req: Request, res: Response, next: NextFunction) {
+  // tRPC places the procedure in the URL, including batched requests.
+  if (!req.originalUrl.toLowerCase().includes("valuation.")) {
+    next();
+    return;
   }
 
-  bucket.count += 1;
+  const now = Date.now();
+  const bucket = updateRateBucket(
+    valuationRateBuckets,
+    clientKey(req),
+    VALUATION_RATE_WINDOW_MS,
+    now
+  );
+  const remaining = Math.max(0, VALUATION_RATE_LIMIT - bucket.count);
+
+  res.setHeader("Valuation-RateLimit-Limit", String(VALUATION_RATE_LIMIT));
+  res.setHeader("Valuation-RateLimit-Remaining", String(remaining));
+  res.setHeader(
+    "Valuation-RateLimit-Reset",
+    String(Math.ceil(bucket.resetAt / 1000))
+  );
+
+  if (bucket.count > VALUATION_RATE_LIMIT) {
+    res.setHeader("Retry-After", String(Math.ceil((bucket.resetAt - now) / 1000)));
+    res.status(429).json({
+      error: "Too many valuation requests. Please try again later.",
+    });
+    return;
+  }
+
+  pruneExpiredBuckets(valuationRateBuckets, now);
+  next();
+}
+
+function rateLimitApi(req: Request, res: Response, next: NextFunction) {
+  const now = Date.now();
+  const bucket = updateRateBucket(
+    rateBuckets,
+    clientKey(req),
+    API_RATE_WINDOW_MS,
+    now
+  );
   const remaining = Math.max(0, API_RATE_LIMIT - bucket.count);
   res.setHeader("RateLimit-Limit", String(API_RATE_LIMIT));
   res.setHeader("RateLimit-Remaining", String(remaining));
@@ -108,12 +171,7 @@ function rateLimitApi(req: Request, res: Response, next: NextFunction) {
     return;
   }
 
-  if (rateBuckets.size > 10_000) {
-    for (const [bucketKey, value] of rateBuckets) {
-      if (value.resetAt <= now) rateBuckets.delete(bucketKey);
-    }
-  }
-
+  pruneExpiredBuckets(rateBuckets, now);
   next();
 }
 
@@ -182,6 +240,7 @@ async function startServer() {
 
   app.use(
     "/api/trpc",
+    rateLimitValuations,
     rateLimitApi,
     createExpressMiddleware({
       router: appRouter,
