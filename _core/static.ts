@@ -7,12 +7,17 @@ export function serveStatic(app: Express) {
     process.env.NODE_ENV === "development"
       ? path.resolve(import.meta.dirname, "../..", "dist", "public")
       : path.resolve(import.meta.dirname, "public");
+  const indexPath = path.resolve(distPath, "index.html");
 
-  if (!fs.existsSync(distPath)) {
-    console.error(
-      `Could not find the build directory: ${distPath}; build the client before starting the server`
+  if (!fs.existsSync(indexPath)) {
+    throw new Error(
+      `Could not find the built client entry point: ${indexPath}; build the client before starting the server`
     );
   }
+
+  // Cache the SPA shell once at startup. This avoids a filesystem read for every
+  // client-side route and removes an unnecessary denial-of-service opportunity.
+  const indexHtml = fs.readFileSync(indexPath, "utf8");
 
   app.use(
     express.static(distPath, {
@@ -30,8 +35,19 @@ export function serveStatic(app: Express) {
 
   // Path-to-regexp handling changed in Express 5. A pathless final middleware
   // is the portable SPA fallback and still lets the earlier API routes win.
-  app.use((_req, res) => {
+  app.use((req, res, next) => {
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      next();
+      return;
+    }
+
+    // Unknown API requests must not receive the client application shell.
+    if (req.path.startsWith("/api/")) {
+      res.status(404).json({ error: "Not found" });
+      return;
+    }
+
     res.setHeader("Cache-Control", "no-cache");
-    res.sendFile(path.resolve(distPath, "index.html"));
+    res.type("html").send(indexHtml);
   });
 }
