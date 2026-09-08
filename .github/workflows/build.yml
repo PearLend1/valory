@@ -1,0 +1,66 @@
+name: Build and security check
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CI: "true"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Build application
+        run: npm run build
+
+      - name: Smoke test production server
+        env:
+          NODE_ENV: production
+          PORT: 4173
+          JWT_SECRET: ci-only-random-session-secret-which-is-longer-than-32-characters
+          ENABLE_DEMO_MODE: "false"
+          ENABLE_DEMO_ADMIN: "false"
+          ENABLE_PUBLIC_SIGNUPS: "false"
+          ALLOW_SYNTHETIC_VALUATIONS: "false"
+        run: |
+          node dist/index.js > /tmp/valory-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent --show-error http://127.0.0.1:4173/sell/valuation > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/valory-server.log
+          exit 1
